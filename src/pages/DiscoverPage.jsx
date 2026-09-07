@@ -133,7 +133,7 @@ function UserCard({ user, index, match, isSent, onRequest }) {
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-xs font-semibold text-amber-600">
-            ★ {user.rating} <span className="text-[#bbb] font-normal">({user.reviews})</span>
+            ★ {user.rating} <span className="text-[#767676] font-normal">({user.reviews})</span>
           </div>
           <div className="text-xs text-[#999]">{user.swaps} swaps</div>
         </div>

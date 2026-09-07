@@ -19,7 +19,7 @@ export default function ModalShell({ open, title, onClose, children }) {
       <div className="mo-box">
         <div className="mo-title">
           {title}
-          <button className="mo-close" onClick={onClose}>✕</button>
+          <button className="mo-close" onClick={onClose} aria-label="Close dialog">✕</button>
         </div>
         {children}
       </div>

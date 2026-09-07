@@ -56,10 +56,12 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
         : "hover:bg-[#FAFAFA] text-[#333]";
 
     cells.push(
-      <div
+      <button
         key={d}
         onClick={() => onSelectDay(d)}
         className={`aspect-square flex items-center justify-center rounded-xl text-sm relative cursor-pointer transition-all ${cellClass}`}
+        aria-label={`${MONTH_NAMES[calMonth]} ${d}, ${calYear}${hasSession ? " — has a session" : ""}${isToday ? " (today)" : ""}`}
+        aria-pressed={isSelected}
       >
         {d}
         {hasSession && (
@@ -67,9 +69,10 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
             className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
               isSelected ? "bg-white" : "bg-emerald-500"
             }`}
+            aria-hidden="true"
           />
         )}
-      </div>
+      </button>
     );
   }
 
@@ -81,12 +84,14 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
           <button
             onClick={() => onChangeMonth(-1)}
             className="w-8 h-8 flex items-center justify-center border border-[#E5E5E5] rounded-xl text-[#666] hover:text-[#111] hover:bg-[#FAFAFA] transition-all text-sm"
+            aria-label="Previous month"
           >
             ‹
           </button>
           <button
             onClick={() => onChangeMonth(1)}
             className="w-8 h-8 flex items-center justify-center border border-[#E5E5E5] rounded-xl text-[#666] hover:text-[#111] hover:bg-[#FAFAFA] transition-all text-sm"
+            aria-label="Next month"
           >
             ›
           </button>
@@ -94,7 +99,7 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
       </div>
       <div className="grid grid-cols-7 gap-1.5">
         {WEEK_DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold uppercase tracking-wider text-[#bbb] py-1">{d}</div>
+          <div key={d} className="text-center text-xs font-semibold uppercase tracking-wider text-[#767676] py-1">{d}</div>
         ))}
         {cells}
       </div>
@@ -128,7 +133,7 @@ function SessionsCard({ selectedDate, sessions, onOpenSessionModal, onOpenReview
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-[#111]">{s.with}</div>
               <div className="text-xs text-[#777]">{s.skill}</div>
-              <div className="text-xs text-[#bbb]">{s.dur} min</div>
+              <div className="text-xs text-[#767676]">{s.dur} min</div>
             </div>
             {!s.reviewed ? (
               <button

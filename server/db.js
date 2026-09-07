@@ -85,7 +85,7 @@ db.exec(`
 const seedUsers = [
   [1, "Bill Amani", "Technology", "BA", 1, 4.9, 23, 12],
   [2, "Jessica", "Design", "J", 1, 4.8, 17, 8],
-  [3, "William Kasongo", "Business", "WK", 0, 5.0, 31, 15],
+  [3, "William Kasongo", "Business", "WK", 0, 1.0, 31, 15],
   [4, "K.Dot", "Music & Arts", "KD", 1, 4.7, 12, 6],
   [5, "La Pulga", "Fitness & Sports", "LP", 0, 4.9, 40, 20],
   [6, "Walter White", "Academic Subjects", "WW", 1, 4.6, 19, 9],
@@ -323,4 +323,3 @@ export function adjustCoins(delta, reason) {
 export function closeDatabase() {
   db.close();
 }
-

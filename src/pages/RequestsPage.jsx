@@ -76,7 +76,7 @@ function RequestCard({ req, users, onAccept, onDecline, declining }) {
           )}
         </div>
         <p className="text-xs text-[#777] italic border-l-2 border-[#EEE] pl-2.5 mb-1">"{req.msg}"</p>
-        <div className="text-xs text-[#bbb]">{req.time}</div>
+        <div className="text-xs text-[#767676]">{req.time}</div>
       </div>
       <div className="flex flex-col gap-2 flex-shrink-0">
         {isIncoming ? (
