@@ -8,9 +8,10 @@ Built as a semester project using **React**, **Express**, and **SQLite**.
 
 ## Preview
 
-<Add screenshots or GIFs here after deployment>
+### Home Page
 
----
+![SkillBridge Home Page](screenshots/homepage.png)
+
 
 ## Features
 
