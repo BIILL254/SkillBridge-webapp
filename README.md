@@ -1,527 +1,273 @@
 # SkillBridge
 
-SkillBridge is a full-stack skill-exchange platform that allows users to discover people with complementary skills, exchange knowledge, schedule learning sessions, and manage skill-swap requests.
+A full-stack **React + Node.js** platform that connects users with verified experts for skill-sharing, consultation booking, and delivery-supported services. SkillBridge helps users discover nearby experts, schedule sessions, submit consultation requests, and track logistics through an integrated delivery system.
 
-The project is built with React on the frontend and Node.js/Express on the backend, with SQLite providing persistent data storage.
+Built as a semester project using **React**, **Express**, and **SQLite**.
+
+---
+
+## Preview
+
+<Add screenshots or GIFs here after deployment>
+
+---
 
 ## Features
 
-* User profiles with skills, departments, ratings, reviews, and availability
-* Discover users based on skills they offer and skills they want to learn
-* Skill matching
-* Skill-swap requests
-* Request acceptance and rejection
-* Learning session scheduling
-* Session management
-* User reviews and ratings
-* Skill Coins system
-* Persistent database storage using SQLite
-* REST API for frontend/backend communication
-* Responsive dashboard interface
+### Expert Discovery
 
-## Technology Stack
+* Browse verified expert profiles.
+* Filter experts by **estate**.
+* Sort by **rating** or **proximity**.
+* View detailed expert profiles.
 
-### Frontend
+### Skills Marketplace
 
-* React
-* Vite
-* JavaScript
-* Tailwind CSS
-* CSS
+* Browse categorized skills.
+* Filter skills using tags such as:
 
-### Backend
+  * Agronomy
+  * Soil Health
+  * Irrigation Systems
 
-* Node.js
-* Express.js
-* REST API
+### Consultation Booking
 
-### Database
+* View expert availability.
+* Book consultation sessions.
+* Submit learning requests.
+* Track request status.
 
-* SQLite
-* Better-SQLite3
+### Reviews
 
-### Development Tools
+* View expert ratings.
+* Read review summaries.
+* See completed session statistics.
 
-* npm
-* Git
-* GitHub
-* VS Code
+### Logistics Integration
 
-## Project Architecture
+* Discover nearby vendor stations.
+* View supported estates.
+* Check available payment methods.
+* Create delivery requests.
+* Track delivery status.
+
+---
+
+## Tech Stack
+
+<row gap=3 align=center><AsyncImage query="React logo" aspectRatio="1:1" maxWidth=36 maxHeight=36/><AsyncImage query="Vite logo" aspectRatio="1:1" maxWidth=36 maxHeight=36/><AsyncImage query="Node.js logo" aspectRatio="1:1" maxWidth=36 maxHeight=36/><AsyncImage query="Express.js logo" aspectRatio="1:1" maxWidth=36 maxHeight=36/><AsyncImage query="SQLite logo" aspectRatio="1:1" maxWidth=36 maxHeight=36/></row>
+
+| Layer         | Technology              |
+| ------------- | ----------------------- |
+| Frontend      | React 18 + Vite         |
+| Backend       | Node.js + Express       |
+| Database      | SQLite (better-sqlite3) |
+| Styling       | CSS                     |
+| API           | REST                    |
+| Documentation | OpenAPI 3.0.3           |
+
+---
+
+## Project Structure
 
 ```text
-SkillBridge/
-│
-├── server/
-│   ├── db.js
-│   ├── server.js
-│   └── routes/
-│       ├── profile.routes.js
-│       ├── requests.routes.js
-│       ├── sessions.routes.js
-│       └── users.routes.js
+SkillBridge-webapp-main/
 │
 ├── src/
 │   ├── components/
-│   │   ├── modals/
-│   │   │   ├── ModalShell.jsx
-│   │   │   ├── RequestModal.jsx
-│   │   │   ├── ReviewModal.jsx
-│   │   │   └── SessionModal.jsx
-│   │   ├── Avatar.jsx
-│   │   ├── MatchBar.jsx
-│   │   ├── Nav.jsx
-│   │   ├── SkillTag.jsx
-│   │   └── Toast.jsx
-│   │
-│   ├── pages/
-│   │   ├── DiscoverPage.jsx
-│   │   ├── ProfilePage.jsx
-│   │   ├── RequestsPage.jsx
-│   │   └── SchedulePage.jsx
-│   │
+│   ├── documentation/
 │   ├── App.jsx
-│   ├── api.js
-│   ├── data.js
-│   ├── index.css
-│   ├── main.jsx
-│   └── utils.js
+│   └── api.js
 │
-├── index.html
+├── server/
+│   ├── routes/
+│   ├── services/
+│   ├── server.js
+│   ├── schema.sql
+│   └── seed.sql
+│
+├── openapi.yaml
 ├── package.json
-├── package-lock.json
-├── tailwind.config.js
-├── postcss.config.js
-├── .env.example
 └── README.md
 ```
 
-## Application Architecture
-
-The application follows a simple three-layer architecture:
-
-```text
-React Frontend
-      |
-      | HTTP Requests
-      v
-Express REST API
-      |
-      | SQL Queries
-      v
-SQLite Database
-```
-
-The React frontend is responsible for the user interface and user interactions.
-
-The Express backend handles API requests, application logic, validation, and communication with the database.
-
-SQLite provides persistent storage for users, skills, requests, sessions, profiles, and other application data.
-
-## Database
-
-SkillBridge uses SQLite instead of storing application data in JavaScript arrays.
-
-The database is created and managed by:
-
-```text
-server/db.js
-```
-
-The SQLite database provides persistent storage, meaning data remains available after the backend server is stopped and restarted.
-
-### Database Structure
-
-The main entities in the database are:
-
-```text
-users
-skills
-user_skills
-profiles
-requests
-sessions
-coin_history
-```
-
-### Users
-
-Stores the application's users.
-
-| Column     | Description                            |
-| ---------- | -------------------------------------- |
-| id         | Unique user identifier                 |
-| name       | User's display name                    |
-| department | User's academic/department information |
-| initials   | User initials used by the UI           |
-| online     | Current online status                  |
-| rating     | Average user rating                    |
-| reviews    | Number of reviews                      |
-| swaps      | Number of completed swaps              |
-
-### Skills
-
-Stores available skills.
-
-| Column   | Description             |
-| -------- | ----------------------- |
-| id       | Unique skill identifier |
-| name     | Skill name              |
-| category | Skill category          |
-
-### User Skills
-
-Connects users with the skills they offer or want to learn.
-
-```text
-users
-  |
-  | user_id
-  v
-user_skills
-  |
-  | skill_id
-  v
-skills
-```
-
-A user can have multiple skills, and a skill can belong to multiple users.
-
-The `type` field determines whether the user:
-
-```text
-offer
-```
-
-or
-
-```text
-want
-```
-
-the skill.
-
-### Profiles
-
-Stores additional information associated with a user's profile, including their Skill Coin balance.
-
-### Requests
-
-Stores skill-exchange requests between users.
-
-A request connects:
-
-```text
-Sender
-   |
-   v
-Receiver
-   |
-   +---- Offered Skill
-   |
-   +---- Requested Skill
-```
-
-Requests also contain their current status, such as pending, accepted, or rejected.
-
-### Sessions
-
-Stores scheduled skill-learning sessions between users.
-
-Sessions contain information such as:
-
-* Participants
-* Skill
-* Date
-* Time
-* Duration
-* Session status
-
-### Coin History
-
-Tracks changes to a user's Skill Coin balance.
-
-This allows the system to keep a record of Skill Coin transactions rather than simply storing the current balance.
-
-## REST API
-
-The frontend communicates with the backend through REST API endpoints.
-
-### Users
-
-```text
-GET /api/users
-GET /api/users/:id
-```
-
-Used to retrieve user information.
-
-### Profiles
-
-```text
-GET /api/profile/:id
-PUT /api/profile/:id
-```
-
-Used to retrieve and update user profile information.
-
-### Requests
-
-```text
-GET /api/requests
-POST /api/requests
-PUT /api/requests/:id
-```
-
-Used to create and manage skill-exchange requests.
-
-### Sessions
-
-```text
-GET /api/sessions
-POST /api/sessions
-PUT /api/sessions/:id
-DELETE /api/sessions/:id
-```
-
-Used to create and manage scheduled learning sessions.
+---
 
 ## Installation
 
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/rickkyalo-glitch/SkillBridge.git
+git clone https://github.com/muthokaricky-alt/SkillBridge-webapp.git
+cd SkillBridge-webapp
 ```
 
-Navigate into the project:
-
-```bash
-cd SkillBridge
-```
-
-Install the dependencies:
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-## Running the Application
+### 3. Configure environment variables
 
-SkillBridge requires both the backend and frontend development servers.
-
-### Start the Backend
-
-Open a terminal and run:
+Copy the example file:
 
 ```bash
-npm run server
+cp .env.example .env
 ```
 
-The Express server will start and provide the REST API.
+Update any required values inside `.env`.
 
-### Start the Frontend
-
-Open a second terminal and run:
-
-```bash
-npm run dev
-```
-
-Vite will provide a local development URL, normally:
-
-```text
-http://localhost:5173
-```
-
-Open that address in your browser.
-
-## Database Setup
-
-The SQLite database is initialized automatically when the backend starts.
-
-The database file is:
-
-```text
-skillbridge.db
-```
-
-The database should not be manually edited during normal development.
-
-If the database needs to be reset to the initial demo state, run:
+### 4. Reset the database (optional)
 
 ```bash
 npm run db:reset
 ```
 
-Then restart the backend:
+### 5. Start the backend
 
 ```bash
 npm run server
 ```
 
-## Environment Variables
+### 6. Start the frontend
 
-Environment-specific configuration can be placed in a `.env` file.
-
-A sample configuration is provided in:
-
-```text
-.env.example
-```
-
-Do not commit sensitive environment variables or credentials to GitHub.
-
-## Available Commands
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the frontend development server:
+Open another terminal:
 
 ```bash
 npm run dev
 ```
 
-Start the backend server:
+The application will be available at:
 
-```bash
-npm run server
-```
+* Frontend: `http://localhost:5173`
+* Backend: `http://localhost:3000`
 
-Reset the SQLite database:
+---
+
+## API Endpoints
+
+### Experts
+
+| Method | Endpoint                     | Description        |
+| ------ | ---------------------------- | ------------------ |
+| GET    | `/experts`                   | Get experts        |
+| GET    | `/experts/{id}`              | Get expert details |
+| GET    | `/experts/{id}/availability` | Get availability   |
+| GET    | `/experts/{id}/reviews`      | Get reviews        |
+
+### Skills
+
+| Method | Endpoint  | Description          |
+| ------ | --------- | -------------------- |
+| GET    | `/skills` | Get skill categories |
+
+### Requests
+
+| Method | Endpoint    | Description                 |
+| ------ | ----------- | --------------------------- |
+| POST   | `/requests` | Create consultation request |
+
+### Logistics
+
+| Method | Endpoint           | Description           |
+| ------ | ------------------ | --------------------- |
+| GET    | `/stations`        | Get vendor stations   |
+| GET    | `/estates`         | Get supported estates |
+| GET    | `/payment-methods` | Get payment methods   |
+| GET    | `/deliveries/{id}` | Track delivery        |
+| POST   | `/deliveries`      | Create delivery       |
+
+---
+
+## OpenAPI Documentation
+
+This project includes an OpenAPI 3.0.3 specification.
+
+* `openapi.yaml`
+
+To validate it:
+
+1. Open **Swagger Editor**.
+2. Paste `openapi.yaml`.
+3. Verify there are zero validation errors.
+
+---
+
+## Database
+
+SkillBridge uses **SQLite** with:
+
+* `schema.sql` – database structure
+* `seed.sql` – sample data
+* `skillbridge.db` – local database
+
+Reset the database anytime with:
 
 ```bash
 npm run db:reset
 ```
 
-Build the frontend for production:
+---
 
-```bash
-npm run build
-```
+## Development Scripts
 
-Preview the production build:
+| Command              | Purpose                   |
+| -------------------- | ------------------------- |
+| `npm run dev`        | Start Vite                |
+| `npm run build`      | Production build          |
+| `npm run preview`    | Preview build             |
+| `npm run server`     | Start Express server      |
+| `npm run server:dev` | Start server with Nodemon |
+| `npm run db:reset`   | Reset SQLite database     |
 
-```bash
-npm run preview
-```
+---
 
-## Data Persistence
+## Documentation
 
-The original application stored data in JavaScript objects and arrays. This meant that changes could be lost whenever the backend restarted.
-
-The current implementation uses SQLite:
-
-```text
-React
-  |
-  v
-Express API
-  |
-  v
-SQLite
-```
-
-This provides persistent storage for application data.
-
-For example, creating a new request through the frontend results in:
+Additional documentation is located in:
 
 ```text
-User
-  |
-  v
-React Request Modal
-  |
-  v
-POST /api/requests
-  |
-  v
-Express Route
-  |
-  v
-SQLite
-  |
-  v
-requests table
+src/documentation/
 ```
 
-The request remains in the database after the server is restarted.
+Including:
 
-## Development Notes
+* API_NEEDS.md
+* DATABASE.md
+* ENDPOINT_LIST.md
+* CONTRIBUTORS.md
+* CONTRACT_QUESTIONS.md
 
-The frontend and backend are intentionally separated.
-
-Frontend code is located in:
-
-```text
-src/
-```
-
-Backend code is located in:
-
-```text
-server/
-```
-
-Database initialization and database operations are handled through:
-
-```text
-server/db.js
-```
-
-API route logic is separated into individual route files under:
-
-```text
-server/routes/
-```
-
-This structure makes it easier to add new functionality without placing the entire backend inside a single file.
-
-Ring Integration — Upstream & Downstream APIs
-
-SkillBridge now implements both sides of the Week 2–3 API contract with our ring partners. As the downstream provider for Farmers-AgroConnect, it exposes GET /experts (with estate and proximity filtering), GET /experts/:id, GET /experts/:id/availability, GET /experts/:id/reviews, GET /skills?tag=, and a consultation-booking endpoint on POST /requests — all matching the endpoints agreed in ENDPOINT_LIST.md. As the upstream consumer of Maji Website, SkillBridge calls their stations, estates, payment-methods, and deliveries endpoints through a dedicated adapter (server/services/majiClient.js) that's proxied through our own backend rather than exposed to the frontend directly. Since Maji Website's live API details weren't available yet, the adapter falls back to schema-accurate mock data (clearly flagged with "source": "mock" in every response) so the integration is fully built, testable, and demoable today, and becomes live with a one-line environment variable change once Team 4 shares their real endpoint.
+---
 
 ## Future Improvements
 
-Potential future improvements include:
+* User authentication
+* JWT authorization
+* Real-time chat
+* Notifications
+* Image uploads
+* Deployment (Render/Vercel)
+* Mobile responsiveness improvements
+* Analytics dashboard
 
-* User authentication and authorization
-* Password hashing and secure login
-* JWT or session-based authentication
-* Real-time notifications
-* WebSocket-based online status
-* Advanced skill-matching algorithms
-* Search and filtering
-* Skill Coin transactions between users
-* Email notifications
-* File and image uploads
-* Automated testing
-* API documentation with Swagger/OpenAPI
-* PostgreSQL migration for production deployments
-* Deployment using a cloud hosting platform
+---
 
-## Project Purpose
+## Contributors
 
-SkillBridge was developed as a full-stack application demonstrating the integration of a modern React frontend, RESTful backend services, and relational database persistence.
+Developed as a collaborative university project.
 
-The project demonstrates concepts including:
+See:
 
-* Component-based frontend development
-* REST API design
-* CRUD operations
-* Relational database design
-* Database relationships
-* State management
-* Form handling
-* Modal-based user interactions
-* Backend routing
-* Persistent data storage
-* Full-stack application architecture
+```text
+src/documentation/CONTRIBUTORS.md
+```
+
+---
 
 ## License
 
-This project is intended for educational and portfolio purposes.
+This project is intended for educational purposes as part of a university software engineering project.
+
+
