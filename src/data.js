@@ -12,6 +12,7 @@ export const ME = {
   dept: "Computer Science",
   initials: "RK",
   color: "#8B6BF5",
+  estate: "Kileleshwa, Nairobi",
 };
 
 // Categories shown as filter pills on Discover
@@ -19,13 +20,14 @@ export const ME = {
 export const CATEGORIES = [
   "Technology", "Design", "Business", "Languages",
   "Music & Arts", "Fitness & Sports", "Academic Subjects", "Life Skills",
+  "Agriculture",
 ];
 
 // Skill category filter pills shown above the Discover grid
 export const SKILL_TAGS = [
   "AI & Automation", "Web Development", "Data Analysis", "UI/UX Design",
   "Digital Marketing", "Cybersecurity", "Cloud Computing", "Sales",
-  "Public Speaking", "Content Creation",
+  "Public Speaking", "Content Creation", "Agriculture",
 ];
 
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

@@ -278,8 +278,32 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="bg-white text-[#111111] min-h-screen flex items-center justify-center">
-        <div className="text-sm text-[#999]">Loading SkillBridge…</div>
+      <div className="bg-white text-[#111111] min-h-screen" role="status" aria-live="polite" aria-label="Loading SkillBridge">
+        <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[#E5E5E5] h-16 flex items-center gap-3 px-6">
+          <div className="w-8 h-8 rounded-xl bg-[#F0F0F0] animate-pulse" />
+          <div className="w-28 h-4 rounded bg-[#F0F0F0] animate-pulse" />
+        </div>
+        <div className="max-w-5xl mx-auto px-6 py-10">
+          <div className="w-56 h-8 rounded bg-[#F0F0F0] animate-pulse mb-3" />
+          <div className="w-72 h-4 rounded bg-[#F5F5F5] animate-pulse mb-8" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="card">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-full bg-[#F0F0F0] animate-pulse" />
+                  <div className="flex-1">
+                    <div className="w-24 h-3.5 rounded bg-[#F0F0F0] animate-pulse mb-2" />
+                    <div className="w-16 h-3 rounded bg-[#F5F5F5] animate-pulse" />
+                  </div>
+                </div>
+                <div className="w-full h-3 rounded bg-[#F5F5F5] animate-pulse mb-2" />
+                <div className="w-3/4 h-3 rounded bg-[#F5F5F5] animate-pulse mb-4" />
+                <div className="w-full h-9 rounded-2xl bg-[#F0F0F0] animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <span className="sr-only">Loading SkillBridge…</span>
       </div>
     );
   }

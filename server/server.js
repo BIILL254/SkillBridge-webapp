@@ -7,11 +7,15 @@
 
 import express from "express";
 import cors from "cors";
+import "dotenv/config";
 
 import usersRouter from "./routes/users.routes.js";
 import requestsRouter from "./routes/requests.routes.js";
 import sessionsRouter from "./routes/sessions.routes.js";
 import profileRouter from "./routes/profile.routes.js";
+import expertsRouter from "./routes/experts.routes.js";
+import skillsRouter from "./routes/skills.routes.js";
+import logisticsRouter from "./routes/logistics.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,9 +33,25 @@ app.use("/api/requests", requestsRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/profile", profileRouter);
 
+// Downstream — served TO Farmers-AgroConnect
+app.use("/api/experts", expertsRouter);
+app.use("/api/skills", skillsRouter);
+
+// Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
+app.use("/api/logistics", logisticsRouter);
+
 // catch-all for unmatched API routes
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
+});
+
+// global error handler — keeps a thrown error (bad JSON body, a DB
+// constraint failure, an insufficient-coins guard, etc.) from crashing the
+// process or leaking a raw stack trace to the client. Must be defined last,
+// and needs all four args for Express to treat it as an error handler.
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ error: err.message || "Something went wrong" });
 });
 
 app.listen(PORT, () => {

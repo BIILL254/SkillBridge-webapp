@@ -16,6 +16,9 @@ router.post("/", (req, res) => {
   if (!withUser || !skill || !date || !time) {
     return res.status(400).json({ error: "with, skill, date, and time are required" });
   }
+  if (dur !== undefined && (typeof dur !== "number" || dur <= 0)) {
+    return res.status(400).json({ error: "dur must be a positive number of minutes" });
+  }
 
   const newSession = addSession({
     withUser,
