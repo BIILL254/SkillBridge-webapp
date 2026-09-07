@@ -27,9 +27,12 @@ Built as a semester project using **React**, **Express**, and **SQLite**.
 * Browse categorized skills.
 * Filter skills using tags such as:
 
-  * Agronomy
-  * Soil Health
-  * Irrigation Systems
+  * Agriculture
+  * Business
+  * Technology--many dormains here
+  * Languages
+  * Content creation and public speaking
+  *  etc
 
 ### Consultation Booking
 
