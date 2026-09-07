@@ -11,7 +11,7 @@ export default function MatchBar({ match, index }) {
 
   return (
     <div
-      className="h-1.5 bg-[#F0F0F0] rounded-full overflow-hidden"
+      className="h-1.5 bg-[var(--sb-surface-alt)] rounded-full overflow-hidden"
       role="progressbar"
       aria-valuenow={match}
       aria-valuemin={0}

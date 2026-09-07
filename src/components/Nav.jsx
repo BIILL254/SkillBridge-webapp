@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ME } from "../data.js";
+import ThemeToggle from "./ThemeToggle.jsx";
 
 const TABS = [
   { id: "discover", label: "Discover" },
@@ -8,7 +9,7 @@ const TABS = [
   { id: "schedule", label: "Schedule" },
 ];
 
-export default function Nav({ page, nav, search, setSearch, myCoins, incomingCount }) {
+export default function Nav({ page, nav, search, setSearch, myCoins, incomingCount, theme, onToggleTheme }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   function goTo(p) {
@@ -17,7 +18,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[#E5E5E5]">
+    <nav className="sticky top-0 z-40 bg-[var(--sb-surface)]/90 backdrop-blur-xl border-b border-[var(--sb-border)]">
       <div className="h-16 flex items-center gap-2 px-4 sm:px-6">
         <div className="flex items-center gap-2 mr-3">
           <svg width="32" height="32" viewBox="0 0 120 120" aria-hidden="true">
@@ -56,8 +57,8 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
 
         <div className="flex items-center gap-2 sm:gap-3 ml-auto">
           {/* Search — collapses to icon-only on small screens */}
-          <div className="hidden sm:flex items-center gap-2 bg-[#FAFAFA] border border-[#E5E5E5] rounded-full px-3.5 py-2">
-            <svg className="w-3.5 h-3.5 text-[#999]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="hidden sm:flex items-center gap-2 bg-[var(--sb-surface-alt)] border border-[var(--sb-border)] rounded-full px-3.5 py-2">
+            <svg className="w-3.5 h-3.5 text-[var(--sb-text-tertiary)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
@@ -67,7 +68,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search…"
-              className="bg-transparent border-none outline-none text-sm text-[#111] placeholder-[#999] w-24 md:w-32"
+              className="bg-transparent border-none outline-none text-sm text-[var(--sb-text-primary)] placeholder-[var(--sb-text-tertiary)] w-24 md:w-32"
             />
           </div>
 
@@ -78,6 +79,8 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
             <span aria-hidden="true">◈</span>
             <span>{myCoins}</span>
           </div>
+
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 
           <button
             onClick={() => nav("profile")}
@@ -90,7 +93,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
 
           {/* Hamburger — only shown below md */}
           <button
-            className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-[#444] hover:bg-[#FAFAFA] transition-colors relative"
+            className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-[var(--sb-text-secondary)] hover:bg-[var(--sb-surface-alt)] transition-colors relative"
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
@@ -105,7 +108,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               </svg>
             )}
             {!menuOpen && incomingCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full border border-white" aria-hidden="true" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full border border-[var(--sb-surface)]" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -113,9 +116,9 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
 
       {/* Mobile slide-down menu: tabs + search, only below md */}
       {menuOpen && (
-        <div className="md:hidden border-t border-[#E5E5E5] bg-white px-4 py-3 flex flex-col gap-1">
-          <div className="flex items-center gap-2 bg-[#FAFAFA] border border-[#E5E5E5] rounded-full px-3.5 py-2 mb-2 sm:hidden">
-            <svg className="w-3.5 h-3.5 text-[#999]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+        <div className="md:hidden border-t border-[var(--sb-border)] bg-[var(--sb-surface)] px-4 py-3 flex flex-col gap-1">
+          <div className="flex items-center gap-2 bg-[var(--sb-surface-alt)] border border-[var(--sb-border)] rounded-full px-3.5 py-2 mb-2 sm:hidden">
+            <svg className="w-3.5 h-3.5 text-[var(--sb-text-tertiary)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
@@ -125,7 +128,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search…"
-              className="bg-transparent border-none outline-none text-sm text-[#111] placeholder-[#999] flex-1"
+              className="bg-transparent border-none outline-none text-sm text-[var(--sb-text-primary)] placeholder-[var(--sb-text-tertiary)] flex-1"
             />
           </div>
           {TABS.map((tab) => (
@@ -141,6 +144,12 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               )}
             </button>
           ))}
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--sb-border-subtle)]">
+            <span className="text-xs text-[var(--sb-text-tertiary)] px-2">
+              {theme === "dark" ? "Dark mode" : "Light mode"}
+            </span>
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          </div>
         </div>
       )}
     </nav>

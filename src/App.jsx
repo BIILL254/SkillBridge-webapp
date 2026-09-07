@@ -7,6 +7,7 @@ import Toast from "./components/Toast.jsx";
 import RequestModal from "./components/modals/RequestModal.jsx";
 import SessionModal from "./components/modals/SessionModal.jsx";
 import ReviewModal from "./components/modals/ReviewModal.jsx";
+import { useTheme } from "./components/ThemeToggle.jsx";
 
 import DiscoverPage from "./pages/DiscoverPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
@@ -16,6 +17,7 @@ import SchedulePage from "./pages/SchedulePage.jsx";
 export default function App() {
   /* ---------- global / cross-page state ---------- */
   const [page, setPage] = useState("discover");
+  const { theme, toggleTheme } = useTheme();
 
   // Data that used to be hardcoded now starts empty and gets filled in by
   // the initial fetch below — see the "load everything" useEffect.
@@ -278,27 +280,27 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="bg-white text-[#111111] min-h-screen" role="status" aria-live="polite" aria-label="Loading SkillBridge">
-        <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-[#E5E5E5] h-16 flex items-center gap-3 px-6">
-          <div className="w-8 h-8 rounded-xl bg-[#F0F0F0] animate-pulse" />
-          <div className="w-28 h-4 rounded bg-[#F0F0F0] animate-pulse" />
+      <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen" role="status" aria-live="polite" aria-label="Loading SkillBridge">
+        <div className="sticky top-0 z-40 bg-[var(--sb-surface)]/90 backdrop-blur-xl border-b border-[var(--sb-border)] h-16 flex items-center gap-3 px-6">
+          <div className="w-8 h-8 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse" />
+          <div className="w-28 h-4 rounded bg-[var(--sb-surface-alt)] animate-pulse" />
         </div>
         <div className="max-w-5xl mx-auto px-6 py-10">
-          <div className="w-56 h-8 rounded bg-[#F0F0F0] animate-pulse mb-3" />
-          <div className="w-72 h-4 rounded bg-[#F5F5F5] animate-pulse mb-8" />
+          <div className="w-56 h-8 rounded bg-[var(--sb-surface-alt)] animate-pulse mb-3" />
+          <div className="w-72 h-4 rounded bg-[var(--sb-surface-alt)] animate-pulse mb-8" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="card">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-full bg-[#F0F0F0] animate-pulse" />
+                  <div className="w-11 h-11 rounded-full bg-[var(--sb-surface-alt)] animate-pulse" />
                   <div className="flex-1">
-                    <div className="w-24 h-3.5 rounded bg-[#F0F0F0] animate-pulse mb-2" />
-                    <div className="w-16 h-3 rounded bg-[#F5F5F5] animate-pulse" />
+                    <div className="w-24 h-3.5 rounded bg-[var(--sb-surface-alt)] animate-pulse mb-2" />
+                    <div className="w-16 h-3 rounded bg-[var(--sb-surface-alt)] animate-pulse" />
                   </div>
                 </div>
-                <div className="w-full h-3 rounded bg-[#F5F5F5] animate-pulse mb-2" />
-                <div className="w-3/4 h-3 rounded bg-[#F5F5F5] animate-pulse mb-4" />
-                <div className="w-full h-9 rounded-2xl bg-[#F0F0F0] animate-pulse" />
+                <div className="w-full h-3 rounded bg-[var(--sb-surface-alt)] animate-pulse mb-2" />
+                <div className="w-3/4 h-3 rounded bg-[var(--sb-surface-alt)] animate-pulse mb-4" />
+                <div className="w-full h-9 rounded-2xl bg-[var(--sb-surface-alt)] animate-pulse" />
               </div>
             ))}
           </div>
@@ -310,19 +312,19 @@ export default function App() {
 
   if (loadError) {
     return (
-      <div className="bg-white text-[#111111] min-h-screen flex items-center justify-center px-6">
+      <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen flex items-center justify-center px-6">
         <div className="max-w-sm text-center">
           <div className="text-2xl mb-3">⚠️</div>
           <div className="font-semibold mb-1">Can't connect to the API</div>
-          <p className="text-sm text-[#666]">{loadError}</p>
+          <p className="text-sm text-[var(--sb-text-secondary)]">{loadError}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white text-[#111111] min-h-screen">
-      <Nav page={page} nav={nav} search={search} setSearch={setSearch} myCoins={myCoins} incomingCount={incomingCount} />
+    <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen">
+      <Nav page={page} nav={nav} search={search} setSearch={setSearch} myCoins={myCoins} incomingCount={incomingCount} theme={theme} onToggleTheme={toggleTheme} />
 
       {page === "discover" && (
         <DiscoverPage

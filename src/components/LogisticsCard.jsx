@@ -41,33 +41,33 @@ export default function LogisticsCard() {
           className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
             source === "live"
               ? "text-emerald-700 bg-emerald-50 border-emerald-100"
-              : "text-[#888] bg-[#FAFAFA] border-[#E5E5E5]"
+              : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
           }`}
         >
           {source === "live" ? "Live · Maji Website" : "Preview data"}
         </span>
       </div>
-      <p className="text-xs text-[#999] mb-4">For groups meeting in person near {ME.estate}.</p>
+      <p className="text-xs text-[var(--sb-text-tertiary)] mb-4">For groups meeting in person near {ME.estate}.</p>
 
       {error && <div className="text-xs text-red-600">Couldn't reach logistics: {error}</div>}
 
       {!error && !stations && (
         <div className="flex flex-col gap-2" aria-hidden="true">
-          {[0, 1].map((i) => <div key={i} className="h-12 rounded-xl bg-[#F5F5F5] animate-pulse" />)}
+          {[0, 1].map((i) => <div key={i} className="h-12 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse" />)}
         </div>
       )}
 
       {stations && stations.length === 0 && (
-        <div className="text-xs text-[#999] py-2">No vendor stations found near {ME.estate} yet.</div>
+        <div className="text-xs text-[var(--sb-text-tertiary)] py-2">No vendor stations found near {ME.estate} yet.</div>
       )}
 
       {stations && stations.length > 0 && (
         <div className="flex flex-col gap-2 mb-4">
           {stations.map((s) => (
-            <div key={s.id} className="flex items-center justify-between border border-[#F0F0F0] rounded-xl px-3 py-2">
+            <div key={s.id} className="flex items-center justify-between border border-[var(--sb-border-subtle)] rounded-xl px-3 py-2">
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-[#111] truncate">{s.name}</div>
-                <div className="text-[11px] text-[#999]">{s.hours}</div>
+                <div className="text-xs font-semibold text-[var(--sb-text-primary)] truncate">{s.name}</div>
+                <div className="text-[11px] text-[var(--sb-text-tertiary)]">{s.hours}</div>
               </div>
               <span className={`text-[10px] font-semibold px-2 py-1 rounded-full border flex-shrink-0 ${STOCK_STYLES[s.stockLevel] || STOCK_STYLES.medium}`}>
                 {s.stockLevel} stock
@@ -79,10 +79,10 @@ export default function LogisticsCard() {
 
       {methods && methods.length > 0 && (
         <div>
-          <div className="text-xs uppercase tracking-wider text-[#aaa] font-semibold mb-1.5">Payment options here</div>
+          <div className="text-xs uppercase tracking-wider text-[var(--sb-text-tertiary)] font-semibold mb-1.5">Payment options here</div>
           <div className="flex flex-wrap gap-1.5">
             {methods.map((m) => (
-              <span key={m.method} className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-[#FAFAFA] border-[#E5E5E5] text-[#444]">
+              <span key={m.method} className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-[var(--sb-surface-alt)] border-[var(--sb-border)] text-[var(--sb-text-secondary)]">
                 {m.method}{m.feeKes ? ` · KES ${m.feeKes} fee` : ""}
               </span>
             ))}
