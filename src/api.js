@@ -50,4 +50,11 @@ export const api = {
     request(`/profile/skills/${type}/${encodeURIComponent(value)}`, { method: "DELETE" }),
   adjustCoins: (delta, reason) =>
     request("/profile/coins", { method: "PATCH", body: JSON.stringify({ delta, reason }) }),
+
+  // logistics (upstream — proxied through our backend to Maji Website;
+  // see server/services/majiClient.js)
+  getStations: (estate) =>
+    request(`/logistics/stations${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`),
+  getPaymentMethods: (estate) =>
+    request(`/logistics/payment-methods${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`),
 };

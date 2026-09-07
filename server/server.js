@@ -1,4 +1,4 @@
-/// server/server.js
+// server/server.js
 //
 // The SkillBridge API. Run it with `npm run server` (or `npm run server:dev`
 // for auto-restart on save). It listens on port 3001 by default and the
@@ -7,11 +7,15 @@
 
 import express from "express";
 import cors from "cors";
+import "dotenv/config";
 
 import usersRouter from "./routes/users.routes.js";
 import requestsRouter from "./routes/requests.routes.js";
 import sessionsRouter from "./routes/sessions.routes.js";
 import profileRouter from "./routes/profile.routes.js";
+import expertsRouter from "./routes/experts.routes.js";
+import skillsRouter from "./routes/skills.routes.js";
+import logisticsRouter from "./routes/logistics.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,6 +32,13 @@ app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/profile", profileRouter);
+
+// Downstream — served TO Farmers-AgroConnect
+app.use("/api/experts", expertsRouter);
+app.use("/api/skills", skillsRouter);
+
+// Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
+app.use("/api/logistics", logisticsRouter);
 
 // catch-all for unmatched API routes
 app.use("/api", (req, res) => {

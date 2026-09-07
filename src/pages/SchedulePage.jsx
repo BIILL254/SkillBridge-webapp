@@ -1,5 +1,6 @@
 import { MONTH_NAMES, WEEK_DAYS } from "../data.js";
 import { formatDate } from "../utils.js";
+import LogisticsCard from "../components/LogisticsCard.jsx";
 
 export default function SchedulePage({
   calYear, calMonth, selectedDate, sessions,
@@ -19,10 +20,13 @@ export default function SchedulePage({
           calYear={calYear} calMonth={calMonth} selectedDate={selectedDate}
           sessions={sessions} onChangeMonth={onChangeMonth} onSelectDay={onSelectDay}
         />
-        <SessionsCard
-          selectedDate={selectedDate} sessions={sessions}
-          onOpenSessionModal={onOpenSessionModal} onOpenReview={onOpenReview}
-        />
+        <div className="flex flex-col gap-5">
+          <SessionsCard
+            selectedDate={selectedDate} sessions={sessions}
+            onOpenSessionModal={onOpenSessionModal} onOpenReview={onOpenReview}
+          />
+          <LogisticsCard />
+        </div>
       </div>
     </div>
   );

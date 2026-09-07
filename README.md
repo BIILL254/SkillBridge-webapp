@@ -481,6 +481,10 @@ server/routes/
 
 This structure makes it easier to add new functionality without placing the entire backend inside a single file.
 
+Ring Integration — Upstream & Downstream APIs
+
+SkillBridge now implements both sides of the Week 2–3 API contract with our ring partners. As the downstream provider for Farmers-AgroConnect, it exposes GET /experts (with estate and proximity filtering), GET /experts/:id, GET /experts/:id/availability, GET /experts/:id/reviews, GET /skills?tag=, and a consultation-booking endpoint on POST /requests — all matching the endpoints agreed in ENDPOINT_LIST.md. As the upstream consumer of Maji Website, SkillBridge calls their stations, estates, payment-methods, and deliveries endpoints through a dedicated adapter (server/services/majiClient.js) that's proxied through our own backend rather than exposed to the frontend directly. Since Maji Website's live API details weren't available yet, the adapter falls back to schema-accurate mock data (clearly flagged with "source": "mock" in every response) so the integration is fully built, testable, and demoable today, and becomes live with a one-line environment variable change once Team 4 shares their real endpoint.
+
 ## Future Improvements
 
 Potential future improvements include:
