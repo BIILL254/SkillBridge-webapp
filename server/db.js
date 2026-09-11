@@ -304,6 +304,47 @@ export function getUserById(id) {
   return getUsers().find(user => user.id === Number(id));
 }
 
+export function addUser({ name, dept, estate, lat, lng, offers = [], wants = [] }) {
+  const initials = name.trim().split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 3) || "U";
+  const insertUser = db.prepare(`
+    INSERT INTO users (name, dept, initials, online, rating, reviews, swaps, estate, lat, lng)
+    VALUES (?, ?, ?, 1, 5.0, 0, 0, ?, ?, ?)
+  `);
+  const result = insertUser.run(
+    name.trim(),
+    dept?.trim() || "General",
+    initials,
+    estate?.trim() || "Nairobi",
+    lat ?? -1.2921,
+    lng ?? 36.8219
+  );
+  const userId = Number(result.lastInsertRowid);
+
+  const insertSkill = db.prepare("INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)");
+  const getSkill = db.prepare("SELECT id FROM skills WHERE name = ?");
+  const insertUserSkill = db.prepare(`
+    INSERT OR IGNORE INTO user_skills (user_id, skill_id, type)
+    VALUES (?, ?, ?)
+  `);
+
+  for (const skill of offers) {
+    const sName = (typeof skill === "string" ? skill : "").trim();
+    if (!sName) continue;
+    insertSkill.run(sName, categorize(sName));
+    const sk = getSkill.get(sName);
+    if (sk) insertUserSkill.run(userId, sk.id, "offer");
+  }
+  for (const skill of wants) {
+    const sName = (typeof skill === "string" ? skill : "").trim();
+    if (!sName) continue;
+    insertSkill.run(sName, categorize(sName));
+    const sk = getSkill.get(sName);
+    if (sk) insertUserSkill.run(userId, sk.id, "want");
+  }
+
+  return getUserById(userId);
+}
+
 // ---------------------------------------------------------------------------
 // Downstream API — served TO Farmers-AgroConnect (see
 // src/documentation/API_NEEDS_DOWNSTREAM.md and ENDPOINT_LIST.md for the
