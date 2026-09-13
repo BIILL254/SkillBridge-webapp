@@ -7,11 +7,12 @@
 
 import { Router } from "express";
 import { getSkillsByCategory } from "../db.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.json(getSkillsByCategory(req.query.tag));
-});
+router.get("/", asyncHandler(async (req, res) => {
+  res.json(await getSkillsByCategory(req.query.tag));
+}));
 
 export default router;

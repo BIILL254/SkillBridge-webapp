@@ -2,18 +2,9 @@
 //
 // USERS, requests, sessions, and the profile used to live here as hardcoded
 // arrays. They've moved to server/db.js and are now fetched over the network
-// through src/api.js — see App.jsx's initial useEffect. Only things that
-// never change at runtime (labels, colors, the signed-in user's display
-// info) stay in this file.
-
-export const ME = {
-  name: "Rick Kyalo",
-  unit: "Year 2",
-  dept: "Computer Science",
-  initials: "RK",
-  color: "#8B6BF5",
-  estate: "Kileleshwa, Nairobi",
-};
+// through src/api.js. The signed-in user's info (name, initials, estate,
+// etc.) now comes from a real account via AuthContext instead of a
+// hardcoded ME constant — see src/context/AuthContext.jsx.
 
 // Categories shown as filter pills on Discover
 // Each user's skills map to one of these

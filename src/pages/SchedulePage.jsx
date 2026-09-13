@@ -3,7 +3,7 @@ import { formatDate } from "../utils.js";
 import LogisticsCard from "../components/LogisticsCard.jsx";
 
 export default function SchedulePage({
-  calYear, calMonth, selectedDate, sessions,
+  calYear, calMonth, selectedDate, sessions, estate,
   onChangeMonth, onSelectDay, onOpenSessionModal, onOpenReview,
 }) {
   return (
@@ -25,7 +25,7 @@ export default function SchedulePage({
             selectedDate={selectedDate} sessions={sessions}
             onOpenSessionModal={onOpenSessionModal} onOpenReview={onOpenReview}
           />
-          <LogisticsCard />
+          <LogisticsCard estate={estate} />
         </div>
       </div>
     </div>
