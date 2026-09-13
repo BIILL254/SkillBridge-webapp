@@ -17,49 +17,51 @@ import {
   getExpertReviews,
   addConsultationRequest,
 } from "../db.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
 // GET /api/experts?estate={estate}&sort={rating|proximity}&lat=&lng=
-router.get("/", (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
   const { estate, sort, lat, lng } = req.query;
-  res.json(getExperts({ estate, sort, lat, lng }));
-});
+  res.json(await getExperts({ estate, sort, lat, lng }));
+}));
 
 // GET /api/experts/:id
-router.get("/:id", (req, res) => {
-  const expert = getExpertById(req.params.id);
+router.get("/:id", asyncHandler(async (req, res) => {
+  const expert = await getExpertById(req.params.id);
   if (!expert) return res.status(404).json({ error: "Expert not found" });
   res.json(expert);
-});
+}));
 
 // GET /api/experts/:id/availability
-router.get("/:id/availability", (req, res) => {
-  const availability = getExpertAvailability(req.params.id);
+router.get("/:id/availability", asyncHandler(async (req, res) => {
+  const availability = await getExpertAvailability(req.params.id);
   if (!availability) return res.status(404).json({ error: "Expert not found" });
   res.json(availability);
-});
+}));
 
 // GET /api/experts/:id/reviews
-router.get("/:id/reviews", (req, res) => {
-  const reviews = getExpertReviews(req.params.id);
+router.get("/:id/reviews", asyncHandler(async (req, res) => {
+  const reviews = await getExpertReviews(req.params.id);
   if (!reviews) return res.status(404).json({ error: "Expert not found" });
   res.json(reviews);
-});
+}));
 
 export default router;
 
 // POST /api/requests (consultation booking) is handled in requests.routes.js
 // so both request types share one table/status flow — see the "consult"
-// type branch there.
-export const consultationHandler = (req, res) => {
+// type branch there. Wrapped in asyncHandler where it's actually mounted
+// (requests.routes.js), since it's async now.
+export const consultationHandler = async (req, res) => {
   const { farmerName, topic, expertId, date } = req.body;
   if (!farmerName || !topic || !expertId || !date) {
     return res.status(400).json({ error: "farmerName, topic, expertId, and date are required" });
   }
-  if (!getExpertById(expertId)) {
+  if (!(await getExpertById(expertId))) {
     return res.status(404).json({ error: "expertId does not match any SkillBridge user" });
   }
-  const newRequest = addConsultationRequest({ farmerName, topic, expertId, date });
+  const newRequest = await addConsultationRequest({ farmerName, topic, expertId, date });
   res.status(201).json(newRequest);
 };

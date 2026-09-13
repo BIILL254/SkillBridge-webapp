@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
 import { calcMatch, getAvatarColor } from "./utils.js";
+import { useAuth } from "./context/AuthContext.jsx";
 
 import Nav from "./components/Nav.jsx";
 import Toast from "./components/Toast.jsx";
@@ -13,8 +14,13 @@ import DiscoverPage from "./pages/DiscoverPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import RequestsPage from "./pages/RequestsPage.jsx";
 import SchedulePage from "./pages/SchedulePage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
+import AuthScreen from "./pages/AuthScreen.jsx";
+import ForcePasswordChangeScreen from "./pages/ForcePasswordChangeScreen.jsx";
 
 export default function App() {
+  const { user, checkingSession, logout } = useAuth();
+
   /* ---------- global / cross-page state ---------- */
   const [page, setPage] = useState("discover");
   const { theme, toggleTheme } = useTheme();
@@ -53,9 +59,12 @@ export default function App() {
     setCoinHistory(p.coinHistory);
   }
 
-  // ---------- load everything from the API on first render ----------
+  // ---------- load everything from the API once we know who's logged in ----------
   useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
     async function loadAll() {
+      setLoading(true);
       try {
         const [usersData, requestsData, sessionsData, profileData] = await Promise.all([
           api.getUsers(),
@@ -63,21 +72,26 @@ export default function App() {
           api.getSessions(),
           api.getProfile(),
         ]);
+        if (cancelled) return;
         setUsers(usersData);
         setRequests(requestsData);
         setSessions(sessionsData);
         applyProfile(profileData);
-        // rebuild "already sent" state from any request with status "sent"
-        setSentSet(new Set(requestsData.filter((r) => r.status === "sent").map((r) => r.fromId)));
+        // rebuild "already sent" state from any request with status "sent" —
+        // toId is the right field now that fromId is always the real
+        // logged-in sender (see sendRequest below), not the target's id.
+        setSentSet(new Set(requestsData.filter((r) => r.status === "sent").map((r) => r.toId)));
         if (usersData.length) setSessWith(usersData[0].name);
+        setLoadError("");
       } catch (err) {
-        setLoadError("Couldn't reach the SkillBridge API. Is the backend running? (npm run server)");
+        if (!cancelled) setLoadError("Couldn't reach the SkillBridge API. Is the backend running? (npm run server)");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     loadAll();
-  }, []);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   function nav(p) { setPage(p); }
 
@@ -125,7 +139,7 @@ export default function App() {
       }
 
       const newRequest = await api.createRequest({
-        fromId: reqModalUser.id, toId: reqModalUser.id, offer, want, type: exchangeType, msg,
+        toId: reqModalUser.id, offer, want, type: exchangeType, msg,
       });
       setRequests((rs) => [...rs, newRequest]);
       setSentSet((s) => new Set(s).add(reqModalUser.id));
@@ -278,6 +292,25 @@ export default function App() {
   }
   discoverList.sort((a, b) => calcMatch(b, myOffers, myWants) - calcMatch(a, myOffers, myWants));
 
+  // ---------- auth gating: these come before the data-loading states,
+  // since there's no point fetching SkillBridge data for someone who
+  // isn't logged in yet ----------
+  if (checkingSession) {
+    return (
+      <div className="bg-[var(--sb-bg)] min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
+  if (user.mustChangePassword) {
+    return <ForcePasswordChangeScreen />;
+  }
+
   if (loading) {
     return (
       <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen" role="status" aria-live="polite" aria-label="Loading SkillBridge">
@@ -324,7 +357,7 @@ export default function App() {
 
   return (
     <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen">
-      <Nav page={page} nav={nav} search={search} setSearch={setSearch} myCoins={myCoins} incomingCount={incomingCount} theme={theme} onToggleTheme={toggleTheme} />
+      <Nav page={page} nav={nav} search={search} setSearch={setSearch} myCoins={myCoins} incomingCount={incomingCount} theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={logout} />
 
       {page === "discover" && (
         <DiscoverPage
@@ -336,6 +369,7 @@ export default function App() {
       )}
       {page === "profile" && (
         <ProfilePage
+          user={user}
           myOffers={myOffers} myWants={myWants} myCoins={myCoins} sessionsCount={sessions.length}
           coinHistory={coinHistory}
           onAddSkill={addSkill} onRemoveSkill={removeSkill} nav={nav}
@@ -345,15 +379,17 @@ export default function App() {
         <RequestsPage
           requests={requests} users={users} activeReqTab={activeReqTab} setActiveReqTab={setActiveReqTab}
           incomingCount={incomingCount} onAccept={acceptReq} onDecline={declineReq} decliningId={decliningId}
+          currentUserId={user.id}
         />
       )}
       {page === "schedule" && (
         <SchedulePage
           calYear={calYear} calMonth={calMonth} selectedDate={selectedDate}
-          sessions={sessions} onChangeMonth={changeMonth} onSelectDay={selectDay}
+          sessions={sessions} estate={user.estate} onChangeMonth={changeMonth} onSelectDay={selectDay}
           onOpenSessionModal={() => setSessionModalOpen(true)} onOpenReview={openReview}
         />
       )}
+      {page === "admin" && user.role === "admin" && <AdminPage />}
 
       <RequestModal
         open={reqModalOpen} user={reqModalUser} myOffers={myOffers}

@@ -1,16 +1,18 @@
 // server/routes/sessions.routes.js
 import { Router } from "express";
-import {
-  getSessions,
-  addSession,
-  markSessionReviewed,
-} from "../db.js";
+import { getSessions, addSession, markSessionReviewed } from "../db.js";
+import { requireAuth } from "../middleware/auth.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
-router.get("/", (req, res) => res.json(getSessions()));
+router.use(requireAuth);
 
-router.post("/", (req, res) => {
+router.get("/", asyncHandler(async (req, res) => {
+  res.json(await getSessions());
+}));
+
+router.post("/", asyncHandler(async (req, res) => {
   const { with: withUser, skill, date, time, dur, color } = req.body;
 
   if (!withUser || !skill || !date || !time) {
@@ -20,7 +22,7 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "dur must be a positive number of minutes" });
   }
 
-  const newSession = addSession({
+  const newSession = await addSession({
     withUser,
     skill,
     date,
@@ -30,12 +32,12 @@ router.post("/", (req, res) => {
   });
 
   res.status(201).json(newSession);
-});
+}));
 
-router.patch("/:id", (req, res) => {
-  const updated = markSessionReviewed(Number(req.params.id));
+router.patch("/:id", asyncHandler(async (req, res) => {
+  const updated = await markSessionReviewed(Number(req.params.id));
   if (!updated) return res.status(404).json({ error: "Session not found" });
   res.json(updated);
-});
+}));
 
 export default router;

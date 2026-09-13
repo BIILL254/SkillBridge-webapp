@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { ME } from "../data.js";
+import { getAvatarColor } from "../utils.js";
+import { api } from "../api.js";
 import SkillTag from "../components/SkillTag.jsx";
 
-export default function ProfilePage({ myOffers, myWants, myCoins, sessionsCount, coinHistory = [], onAddSkill, onRemoveSkill, nav }) {
+export default function ProfilePage({ user, myOffers, myWants, myCoins, sessionsCount, coinHistory = [], onAddSkill, onRemoveSkill, nav }) {
+  const avatarColor = getAvatarColor(user.name);
   return (
     <div id="page-profile" className="page on max-w-5xl mx-auto px-6 py-10">
       <div className="mb-7">
@@ -17,20 +19,20 @@ export default function ProfilePage({ myOffers, myWants, myCoins, sessionsCount,
           <div className="card">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold mb-4"
-              style={{ background: ME.color + "1A", color: ME.color }}
+              style={{ background: avatarColor + "1A", color: avatarColor }}
             >
-              {ME.initials}
+              {user.initials}
             </div>
 
-            <div className="font-semibold text-lg mb-0.5 font-display">{ME.name}</div>
-            <div className="text-sm text-[var(--sb-text-secondary)] mb-1">{ME.dept} · {ME.unit}</div>
-            <div className="text-xs text-[var(--sb-text-tertiary)] mb-5">Member since June 2026</div>
+            <div className="font-semibold text-lg mb-0.5 font-display">{user.name}</div>
+            <div className="text-sm text-[var(--sb-text-secondary)] mb-1">{user.dept}{user.estate ? ` · ${user.estate}` : ""}</div>
+            <div className="text-xs text-[var(--sb-text-tertiary)] mb-5">@{user.username} · {user.phone}</div>
 
             <div className="grid grid-cols-3 gap-2 mb-4">
               {[
                 [myOffers.length + myWants.length, "Skills"],
                 [sessionsCount, "Sessions"],
-                ["4.8 ★", "Rating"],
+                [user.rating ? `${user.rating} ★` : "New", "Rating"],
               ].map(([num, label]) => (
                 <div key={label} className="bg-[var(--sb-surface-alt)] border border-[var(--sb-border-subtle)] rounded-2xl p-2.5 text-center">
                   <div className="font-semibold text-emerald-600 text-lg">{num}</div>
@@ -102,8 +104,68 @@ export default function ProfilePage({ myOffers, myWants, myCoins, sessionsCount,
             dotColor="bg-violet-500" placeholder="e.g. Spanish, React…"
             onAdd={onAddSkill} onRemove={onRemoveSkill}
           />
+          <ChangePasswordCard />
         </div>
       </div>
+    </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [status, setStatus] = useState(null); // null | { type: "error"|"success", msg }
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus(null);
+    if (newPassword !== confirmPassword) {
+      setStatus({ type: "error", msg: "New passwords don't match" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.changePassword(oldPassword, newPassword);
+      setStatus({ type: "success", msg: "Password changed ✓" });
+      setOldPassword(""); setNewPassword(""); setConfirmPassword("");
+    } catch (err) {
+      setStatus({ type: "error", msg: err.message });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputClass =
+    "w-full bg-[var(--sb-surface-alt)] border border-[var(--sb-border)] rounded-2xl px-3.5 py-2.5 text-sm text-[var(--sb-text-primary)] outline-none focus:border-emerald-400 focus:bg-[var(--sb-surface)] placeholder-[var(--sb-text-tertiary)]";
+
+  return (
+    <div className="card">
+      <div className="font-semibold text-sm mb-3.5 font-display">Change password</div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+        <input
+          type="password" required placeholder="Current password" value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)} className={inputClass}
+        />
+        <input
+          type="password" required minLength={4} placeholder="New password" value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)} className={inputClass}
+        />
+        <input
+          type="password" required minLength={4} placeholder="Confirm new password" value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass}
+        />
+        {status && (
+          <p className={`text-xs ${status.type === "error" ? "text-red-600" : "text-emerald-600"}`}>{status.msg}</p>
+        )}
+        <button
+          type="submit" disabled={submitting}
+          className="w-full py-2.5 bg-[var(--sb-inverse)] hover:bg-emerald-600 text-[var(--sb-inverse-text)] rounded-2xl text-xs font-semibold transition-all disabled:opacity-50"
+        >
+          {submitting ? "Saving…" : "Update password"}
+        </button>
+      </form>
     </div>
   );
 }

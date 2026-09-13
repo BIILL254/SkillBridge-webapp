@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ME } from "../data.js";
+import { getAvatarColor } from "../utils.js";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 const TABS = [
@@ -9,8 +9,10 @@ const TABS = [
   { id: "schedule", label: "Schedule" },
 ];
 
-export default function Nav({ page, nav, search, setSearch, myCoins, incomingCount, theme, onToggleTheme }) {
+export default function Nav({ page, nav, search, setSearch, myCoins, incomingCount, theme, onToggleTheme, user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const avatarColor = getAvatarColor(user.name);
+  const tabs = user.role === "admin" ? [...TABS, { id: "admin", label: "Admin" }] : TABS;
 
   function goTo(p) {
     nav(p);
@@ -37,7 +39,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
 
         {/* Tab links — hidden below md, shown in the slide-down menu instead */}
         <div className="hidden md:flex gap-1 flex-1">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               className={`ntab${page === tab.id ? " on" : ""} relative`}
@@ -85,10 +87,24 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
           <button
             onClick={() => nav("profile")}
             className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer hover:scale-105 transition-transform"
-            style={{ background: ME.color + "1A", color: ME.color }}
+            style={{ background: avatarColor + "1A", color: avatarColor }}
             aria-label="Go to my profile"
+            title={user.name}
           >
-            {ME.initials}
+            {user.initials}
+          </button>
+
+          <button
+            onClick={onLogout}
+            className="hidden md:block w-9 h-9 rounded-full flex items-center justify-center text-[var(--sb-text-secondary)] hover:bg-[var(--sb-surface-alt)] transition-colors"
+            aria-label="Log out"
+            title="Log out"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
           </button>
 
           {/* Hamburger — only shown below md */}
@@ -131,7 +147,7 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               className="bg-transparent border-none outline-none text-sm text-[var(--sb-text-primary)] placeholder-[var(--sb-text-tertiary)] flex-1"
             />
           </div>
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               className={`ntab text-left${page === tab.id ? " on" : ""} relative`}
@@ -144,6 +160,9 @@ export default function Nav({ page, nav, search, setSearch, myCoins, incomingCou
               )}
             </button>
           ))}
+          <button onClick={onLogout} className="ntab text-left text-red-600">
+            Log out
+          </button>
           <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--sb-border-subtle)]">
             <span className="text-xs text-[var(--sb-text-tertiary)] px-2">
               {theme === "dark" ? "Dark mode" : "Light mode"}

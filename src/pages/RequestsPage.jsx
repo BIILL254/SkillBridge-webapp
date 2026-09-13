@@ -1,7 +1,7 @@
 import Avatar from "../components/Avatar.jsx";
 import SkillTag from "../components/SkillTag.jsx";
 
-export default function RequestsPage({ requests, users, activeReqTab, setActiveReqTab, incomingCount, onAccept, onDecline, decliningId }) {
+export default function RequestsPage({ requests, users, activeReqTab, setActiveReqTab, incomingCount, onAccept, onDecline, decliningId, currentUserId }) {
   const list = requests.filter((r) => r.status === activeReqTab);
 
   return (
@@ -34,7 +34,7 @@ export default function RequestsPage({ requests, users, activeReqTab, setActiveR
       ) : (
         <div className="flex flex-col gap-4">
           {list.map((r) => (
-            <RequestCard key={r.id} req={r} users={users} onAccept={onAccept} onDecline={onDecline} declining={decliningId === r.id} />
+            <RequestCard key={r.id} req={r} users={users} onAccept={onAccept} onDecline={onDecline} declining={decliningId === r.id} currentUserId={currentUserId} />
           ))}
         </div>
       )}
@@ -42,8 +42,12 @@ export default function RequestsPage({ requests, users, activeReqTab, setActiveR
   );
 }
 
-function RequestCard({ req, users, onAccept, onDecline, declining }) {
-  const userId = req.toId || req.fromId;
+function RequestCard({ req, users, onAccept, onDecline, declining, currentUserId }) {
+  // Whichever side ISN'T me is "the other party" to display — correct
+  // regardless of whether this is an incoming or a sent request, now that
+  // fromId/toId carry real sender/recipient meaning instead of both being
+  // set to the same value.
+  const userId = req.fromId === currentUserId ? req.toId : req.fromId;
   const user = users.find((u) => u.id === userId);
   if (!user) return null;
 
