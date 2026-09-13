@@ -78,98 +78,128 @@ export default function AdminPage() {
 
       {error && <div className="text-sm text-red-600 mb-4">{error}</div>}
 
-      <div className="card overflow-x-auto">
-        {!users ? (
-          <div className="text-sm text-[var(--sb-text-tertiary)] py-6 text-center">Loading users…</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--sb-text-tertiary)] border-b border-[var(--sb-border-subtle)]">
-                <th className="pb-2 pr-3">Name</th>
-                <th className="pb-2 pr-3">Username</th>
-                <th className="pb-2 pr-3">Phone</th>
-                <th className="pb-2 pr-3">Dept</th>
-                <th className="pb-2 pr-3">Role</th>
-                <th className="pb-2 pr-3">Coins</th>
-                <th className="pb-2 pr-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-[var(--sb-border-subtle)] last:border-0" style={{ opacity: busyId === u.id ? 0.4 : 1 }}>
-                  <td className="py-2.5 pr-3 font-medium text-[var(--sb-text-primary)]">{u.name}</td>
-                  <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.username}</td>
-                  <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.phone}</td>
-                  <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.dept}</td>
-                  <td className="py-2.5 pr-3">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                      u.role === "admin"
-                        ? "text-violet-700 bg-violet-50 border-violet-100"
-                        : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
-                    }`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-3 text-amber-600 font-semibold">{u.coins} ◈</td>
-                  <td className="py-2.5 pr-3 text-right whitespace-nowrap">
-                    <button onClick={() => setEditingUser(u)} className="text-xs font-semibold text-emerald-600 hover:underline mr-3">
-                      Edit
-                    </button>
-                    <button onClick={() => setResettingUser(u)} className="text-xs font-semibold text-amber-600 hover:underline mr-3">
-                      Reset password
-                    </button>
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      disabled={u.id === currentUser.id || busyId === u.id}
-                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed"
-                      title={u.id === currentUser.id ? "You can't delete your own account while logged in as it" : undefined}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <h2 className="font-semibold text-base mb-3 font-display">Audit log</h2>
-        <div className="card overflow-x-auto">
-          {!auditLog ? (
-            <div className="text-sm text-[var(--sb-text-tertiary)] py-6 text-center">Loading…</div>
-          ) : auditLog.length === 0 ? (
-            <div className="text-sm text-[var(--sb-text-tertiary)] py-6 text-center">No admin actions yet.</div>
-          ) : (
+      {!users ? (
+        <div className="card text-sm text-[var(--sb-text-tertiary)] py-6 text-center">Loading users…</div>
+      ) : (
+        <>
+          {/* Desktop: full table. Hidden below md — a table with 7 columns
+              doesn't reflow usefully on a phone-width screen, so mobile
+              gets a stacked card list instead (below). */}
+          <div className="card overflow-x-auto hidden md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--sb-text-tertiary)] border-b border-[var(--sb-border-subtle)]">
-                  <th className="pb-2 pr-3">When</th>
-                  <th className="pb-2 pr-3">Admin</th>
-                  <th className="pb-2 pr-3">Action</th>
-                  <th className="pb-2 pr-3">Target</th>
-                  <th className="pb-2 pr-3">Details</th>
+                  <th className="pb-2 pr-3">Name</th>
+                  <th className="pb-2 pr-3">Username</th>
+                  <th className="pb-2 pr-3">Phone</th>
+                  <th className="pb-2 pr-3">Dept</th>
+                  <th className="pb-2 pr-3">Role</th>
+                  <th className="pb-2 pr-3">Coins</th>
+                  <th className="pb-2 pr-3"></th>
                 </tr>
               </thead>
               <tbody>
-                {auditLog.map((entry) => (
-                  <tr key={entry.id} className="border-b border-[var(--sb-border-subtle)] last:border-0">
-                    <td className="py-2.5 pr-3 text-[var(--sb-text-tertiary)] whitespace-nowrap">{entry.createdAt}</td>
-                    <td className="py-2.5 pr-3 font-medium text-[var(--sb-text-primary)]">{entry.adminUsername}</td>
-                    <td className="py-2.5 pr-3">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border text-emerald-700 bg-emerald-50 border-emerald-100">
-                        {entry.action.replace(/_/g, " ")}
-                      </span>
+                {users.map((u) => (
+                  <tr key={u.id} className="border-b border-[var(--sb-border-subtle)] last:border-0" style={{ opacity: busyId === u.id ? 0.4 : 1 }}>
+                    <td className="py-2.5 pr-3 font-medium text-[var(--sb-text-primary)]">{u.name}</td>
+                    <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.username}</td>
+                    <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.phone}</td>
+                    <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{u.dept}</td>
+                    <td className="py-2.5 pr-3"><RoleBadge role={u.role} /></td>
+                    <td className="py-2.5 pr-3 text-amber-600 font-semibold">{u.coins} ◈</td>
+                    <td className="py-2.5 pr-3 text-right whitespace-nowrap">
+                      <UserRowActions
+                        user={u} currentUserId={currentUser.id} busy={busyId === u.id}
+                        onEdit={() => setEditingUser(u)} onReset={() => setResettingUser(u)} onDelete={() => handleDelete(u.id)}
+                      />
                     </td>
-                    <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{entry.targetUsername || "—"}</td>
-                    <td className="py-2.5 pr-3 text-[var(--sb-text-tertiary)]">{entry.details}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+
+          {/* Mobile: one card per user, same actions and data as the table. */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {users.map((u) => (
+              <div key={u.id} className="card" style={{ opacity: busyId === u.id ? 0.4 : 1 }}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-medium text-[var(--sb-text-primary)]">{u.name}</div>
+                    <div className="text-xs text-[var(--sb-text-secondary)]">@{u.username} · {u.phone}</div>
+                  </div>
+                  <RoleBadge role={u.role} />
+                </div>
+                <div className="flex items-center justify-between text-xs text-[var(--sb-text-secondary)] mb-3">
+                  <span>{u.dept}</span>
+                  <span className="text-amber-600 font-semibold">{u.coins} ◈</span>
+                </div>
+                <div className="flex gap-4 pt-2 border-t border-[var(--sb-border-subtle)]">
+                  <UserRowActions
+                    user={u} currentUserId={currentUser.id} busy={busyId === u.id}
+                    onEdit={() => setEditingUser(u)} onReset={() => setResettingUser(u)} onDelete={() => handleDelete(u.id)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="mt-6">
+        <h2 className="font-semibold text-base mb-3 font-display">Audit log</h2>
+
+        {!auditLog ? (
+          <div className="card text-sm text-[var(--sb-text-tertiary)] py-6 text-center">Loading…</div>
+        ) : auditLog.length === 0 ? (
+          <div className="card text-sm text-[var(--sb-text-tertiary)] py-6 text-center">No admin actions yet.</div>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="card overflow-x-auto hidden md:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-wider text-[var(--sb-text-tertiary)] border-b border-[var(--sb-border-subtle)]">
+                    <th className="pb-2 pr-3">When</th>
+                    <th className="pb-2 pr-3">Admin</th>
+                    <th className="pb-2 pr-3">Action</th>
+                    <th className="pb-2 pr-3">Target</th>
+                    <th className="pb-2 pr-3">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLog.map((entry) => (
+                    <tr key={entry.id} className="border-b border-[var(--sb-border-subtle)] last:border-0">
+                      <td className="py-2.5 pr-3 text-[var(--sb-text-tertiary)] whitespace-nowrap">{entry.createdAt}</td>
+                      <td className="py-2.5 pr-3 font-medium text-[var(--sb-text-primary)]">{entry.adminUsername}</td>
+                      <td className="py-2.5 pr-3"><ActionBadge action={entry.action} /></td>
+                      <td className="py-2.5 pr-3 text-[var(--sb-text-secondary)]">{entry.targetUsername || "—"}</td>
+                      <td className="py-2.5 pr-3 text-[var(--sb-text-tertiary)]">{entry.details}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="flex flex-col gap-3 md:hidden">
+              {auditLog.map((entry) => (
+                <div key={entry.id} className="card">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <ActionBadge action={entry.action} />
+                    <span className="text-[10px] text-[var(--sb-text-tertiary)]">{entry.createdAt}</span>
+                  </div>
+                  <div className="text-xs text-[var(--sb-text-secondary)] mb-1">
+                    <span className="font-medium text-[var(--sb-text-primary)]">{entry.adminUsername}</span>
+                    {" → "}
+                    {entry.targetUsername || "—"}
+                  </div>
+                  {entry.details && <div className="text-xs text-[var(--sb-text-tertiary)]">{entry.details}</div>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {editingUser && (
@@ -197,6 +227,49 @@ export default function AdminPage() {
         />
       )}
     </div>
+  );
+}
+
+function RoleBadge({ role }) {
+  return (
+    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+      role === "admin"
+        ? "text-violet-700 bg-violet-50 border-violet-100"
+        : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
+    }`}>
+      {role}
+    </span>
+  );
+}
+
+function ActionBadge({ action }) {
+  return (
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border text-emerald-700 bg-emerald-50 border-emerald-100">
+      {action.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+// Shared between the desktop table row and the mobile card, so the three
+// actions (and the "can't touch your own account" rules) only exist once.
+function UserRowActions({ user, currentUserId, busy, onEdit, onReset, onDelete }) {
+  return (
+    <>
+      <button onClick={onEdit} className="text-xs font-semibold text-emerald-600 hover:underline">
+        Edit
+      </button>
+      <button onClick={onReset} className="text-xs font-semibold text-amber-600 hover:underline">
+        Reset password
+      </button>
+      <button
+        onClick={onDelete}
+        disabled={user.id === currentUserId || busy}
+        className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed"
+        title={user.id === currentUserId ? "You can't delete your own account while logged in as it" : undefined}
+      >
+        Delete
+      </button>
+    </>
   );
 }
 

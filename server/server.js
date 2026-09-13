@@ -22,7 +22,12 @@ import adminRouter from "./routes/admin.routes.js";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());          // allow the Vite dev server (different port) to call this API
+// CORS: permissive by default (fine for local dev — the Vite dev server
+// runs on a different port). Once deployed, set ALLOWED_ORIGIN in the
+// environment to your actual frontend URL to stop other websites' JS
+// from being able to call this API directly from a browser.
+const allowedOrigin = process.env.ALLOWED_ORIGIN;
+app.use(cors(allowedOrigin ? { origin: allowedOrigin } : {}));
 app.use(express.json());  // parse JSON request bodies into req.body
 
 // simple endpoint to check the server is actually up
