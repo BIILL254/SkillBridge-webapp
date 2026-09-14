@@ -134,7 +134,7 @@ export default function AdminPage() {
                   <span>{u.dept}</span>
                   <span className="text-amber-600 font-semibold">{u.coins} ◈</span>
                 </div>
-                <div className="flex gap-4 pt-2 border-t border-[var(--sb-border-subtle)]">
+                <div className="pt-2 border-t border-[var(--sb-border-subtle)]">
                   <UserRowActions
                     user={u} currentUserId={currentUser.id} busy={busyId === u.id}
                     onEdit={() => setEditingUser(u)} onReset={() => setResettingUser(u)} onDelete={() => handleDelete(u.id)}
@@ -254,22 +254,28 @@ function ActionBadge({ action }) {
 // actions (and the "can't touch your own account" rules) only exist once.
 function UserRowActions({ user, currentUserId, busy, onEdit, onReset, onDelete }) {
   return (
-    <>
-      <button onClick={onEdit} className="text-xs font-semibold text-emerald-600 hover:underline">
+    <div className="flex items-center justify-end gap-1 flex-wrap">
+      <button
+        onClick={onEdit}
+        className="text-xs font-semibold text-emerald-600 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-colors"
+      >
         Edit
       </button>
-      <button onClick={onReset} className="text-xs font-semibold text-amber-600 hover:underline">
+      <button
+        onClick={onReset}
+        className="text-xs font-semibold text-amber-600 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg transition-colors"
+      >
         Reset password
       </button>
       <button
         onClick={onDelete}
         disabled={user.id === currentUserId || busy}
-        className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-30 disabled:no-underline disabled:cursor-not-allowed"
+        className="text-xs font-semibold text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
         title={user.id === currentUserId ? "You can't delete your own account while logged in as it" : undefined}
       >
         Delete
       </button>
-    </>
+    </div>
   );
 }
 

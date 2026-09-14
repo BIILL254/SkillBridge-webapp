@@ -81,11 +81,6 @@ function LoginForm() {
       <button type="submit" disabled={submitting} className={submitClass}>
         {submitting ? "Logging in…" : "Log in"}
       </button>
-
-      <p className="text-[11px] text-[var(--sb-text-tertiary)] mt-4 text-center">
-        Demo accounts use default password <strong>1234</strong><br />
-        Admin username: <strong>admin</strong> · password: <strong>1234</strong>
-      </p>
     </form>
   );
 }
