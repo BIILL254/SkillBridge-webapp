@@ -5,6 +5,26 @@
 /* index.css — white bg, emerald accent, soft shadows (ported from style.css) */
 
 /* ---------------------------------------------------------------------
+   Focus visibility for keyboard navigation. Tailwind's base reset strips
+   the browser's default focus outline on interactive elements, and
+   nothing in this codebase replaced it — meaning a keyboard user tabbing
+   through the app couldn't see where focus was at all. :focus-visible
+   (not plain :focus) means this only shows up for keyboard/assistive-tech
+   navigation, not on every mouse click, matching how sighted mouse users
+   already expect buttons to look.
+   --------------------------------------------------------------------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------
    Theme tokens. Every component uses these instead of raw hex values so
    dark mode is just swapping the values below, not touching every file.
    Toggled by adding/removing the "dark" class on <html> — see

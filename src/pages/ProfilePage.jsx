@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getAvatarColor } from "../utils.js";
 import { api } from "../api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import SkillTag from "../components/SkillTag.jsx";
 
 export default function ProfilePage({ user, myOffers, myWants, myCoins, sessionsCount, coinHistory = [], onAddSkill, onRemoveSkill, nav }) {

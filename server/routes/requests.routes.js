@@ -6,6 +6,7 @@ import {
   updateRequestStatus,
   removeRequest,
   getUserByToken,
+  getUserById,
 } from "../db.js";
 import { consultationHandler } from "./experts.routes.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -51,6 +52,9 @@ router.post("/", asyncHandler(async (req, res) => {
   }
   if (!["swap", "coin"].includes(type)) {
     return res.status(400).json({ error: "type must be 'swap' or 'coin' (use expertId for a consultation booking)" });
+  }
+  if (toId !== undefined && toId !== null && !(await getUserById(toId))) {
+    return res.status(400).json({ error: "toId does not match any SkillBridge user" });
   }
 
   const newRequest = await addRequest({ fromId: user.id, toId, offer, want, type, msg });

@@ -590,6 +590,29 @@ export async function getProfile(userId) {
   };
 }
 
+// Self-service edit of your own basic info. Deliberately a small,
+// separate whitelist from ADMIN_EDITABLE_FIELDS below — a user can update
+// their own dept/estate, but NOT their role, rating, reviews, or swap
+// count (those stay admin-only / system-computed).
+const SELF_EDITABLE_FIELDS = ["dept", "estate"];
+
+export async function updateOwnProfileInfo(userId, fields) {
+  const updates = Object.entries(fields).filter(
+    ([key, value]) => SELF_EDITABLE_FIELDS.includes(key) && value !== undefined
+  );
+  if (updates.length === 0) {
+    const err = new Error(`No editable fields provided. Allowed: ${SELF_EDITABLE_FIELDS.join(", ")}`);
+    err.status = 400;
+    throw err;
+  }
+  const setClause = updates.map(([key]) => `${key} = ?`).join(", ");
+  const values = updates.map(([, value]) => value);
+  db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values, userId);
+
+  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  return toSafeUser(row);
+}
+
 export async function addProfileSkill(userId, type, value) {
   const name = value.trim();
   db.prepare("INSERT OR IGNORE INTO skills (name) VALUES (?)").run(name);
@@ -707,6 +730,12 @@ export async function createUser({ name, username, phone, password }) {
   return toSafeUser(row);
 }
 
+// Sessions expire after 7 days of being issued (not 7 days of inactivity —
+// keeping this simple). A logged-in tab just gets treated as logged-out
+// once its token is past this age; the frontend's existing "token invalid"
+// handling (redirect to AuthScreen) covers it with no extra code needed.
+const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 export async function createAuthToken(userId) {
   const token = crypto.randomBytes(32).toString("hex");
   db.prepare("INSERT INTO auth_tokens (user_id, token) VALUES (?, ?)").run(userId, token);
@@ -715,10 +744,17 @@ export async function createAuthToken(userId) {
 
 export async function getUserByToken(token) {
   const row = db.prepare(`
-    SELECT u.* FROM auth_tokens t
+    SELECT u.*, t.created_at AS tokenCreatedAt FROM auth_tokens t
     JOIN users u ON u.id = t.user_id
     WHERE t.token = ?
   `).get(token);
+  if (!row) return null;
+
+  const tokenAgeMs = Date.now() - new Date(row.tokenCreatedAt.replace(" ", "T") + "Z").getTime();
+  if (tokenAgeMs > TOKEN_MAX_AGE_MS) {
+    db.prepare("DELETE FROM auth_tokens WHERE token = ?").run(token); // clean up while we're here
+    return null;
+  }
   return toSafeUser(row);
 }
 

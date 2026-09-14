@@ -74,6 +74,7 @@ export const api = {
   // profile (always "my" profile — the backend derives which user from
   // the auth token, not from anything passed here)
   getProfile: () => request("/profile"),
+  updateProfile: (fields) => request("/profile", { method: "PATCH", body: JSON.stringify(fields) }),
   addProfileSkill: (type, value) =>
     request("/profile/skills", { method: "POST", body: JSON.stringify({ type, value }) }),
   removeProfileSkill: (type, value) =>

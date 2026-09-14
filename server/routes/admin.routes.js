@@ -53,6 +53,10 @@ router.post("/users", asyncHandler(async (req, res) => {
 }));
 
 router.patch("/users/:id", asyncHandler(async (req, res) => {
+  if (Number(req.params.id) === req.user.id && "role" in req.body && req.body.role !== "admin") {
+    return res.status(400).json({ error: "You can't change your own role away from admin while logged in as it" });
+  }
+
   const updated = await adminUpdateUser(Number(req.params.id), req.body);
   if (!updated) return res.status(404).json({ error: "User not found" });
 

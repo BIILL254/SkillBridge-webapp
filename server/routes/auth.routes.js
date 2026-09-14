@@ -1,5 +1,6 @@
 // server/routes/auth.routes.js
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import {
   createUser,
   findUserByUsername,
@@ -14,7 +15,30 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const router = Router();
 
-router.post("/signup", asyncHandler(async (req, res) => {
+// Every account starts on the same default password ("1234") until
+// changed, so brute-forcing a username is meaningfully easier here than
+// on a normal app — this caps how many login attempts a single IP can
+// make. 10 tries per 15 minutes is generous for a real person mistyping
+// their password, but slow enough to make guessing usernames impractical.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Please wait a few minutes and try again." },
+});
+
+// Looser limit on signup — mainly to slow down someone scripting mass
+// account creation, not a real person occasionally mistyping a field.
+const signupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many signup attempts from this connection. Please wait a few minutes." },
+});
+
+router.post("/signup", signupLimiter, asyncHandler(async (req, res) => {
   const { name, username, phone, password } = req.body;
 
   if (!name || !username || !phone || !password) {
@@ -29,7 +53,7 @@ router.post("/signup", asyncHandler(async (req, res) => {
   res.status(201).json({ token, user });
 }));
 
-router.post("/login", asyncHandler(async (req, res) => {
+router.post("/login", loginLimiter, asyncHandler(async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: "username and password are required" });

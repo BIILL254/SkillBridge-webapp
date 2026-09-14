@@ -5,6 +5,7 @@ import {
   addProfileSkill,
   removeProfileSkill,
   adjustCoins,
+  updateOwnProfileInfo,
 } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -17,6 +18,15 @@ router.use(requireAuth);
 
 router.get("/", asyncHandler(async (req, res) => {
   res.json(await getProfile(req.user.id));
+}));
+
+// Self-service edit of basic info (currently just dept/estate — the only
+// way estate ever gets set for a user who signed up themselves, since
+// signup itself doesn't collect it).
+router.patch("/", asyncHandler(async (req, res) => {
+  const { dept, estate } = req.body;
+  const updated = await updateOwnProfileInfo(req.user.id, { dept, estate });
+  res.json(updated);
 }));
 
 router.post("/skills", asyncHandler(async (req, res) => {
