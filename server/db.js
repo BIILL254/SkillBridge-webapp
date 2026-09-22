@@ -543,7 +543,8 @@ export async function updateRequestStatus(id, status) {
 }
 
 export async function removeRequest(id) {
-  db.prepare("DELETE FROM requests WHERE id = ?").run(id);
+  const result = db.prepare("DELETE FROM requests WHERE id = ?").run(id);
+  return result.changes > 0; // true if a row actually existed and was deleted
 }
 
 export async function getSessions() {
