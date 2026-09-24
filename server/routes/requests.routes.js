@@ -71,7 +71,8 @@ router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  await removeRequest(Number(req.params.id));
+  const deleted = await removeRequest(Number(req.params.id));
+  if (!deleted) return res.status(404).json({ error: "Request not found" });
   res.status(204).end();
 }));
 
