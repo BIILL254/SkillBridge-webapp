@@ -1,4 +1,6 @@
 node_modules
+postman/
+.postman/
 dist
 .DS_Store
 .env
