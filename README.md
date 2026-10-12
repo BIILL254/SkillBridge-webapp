@@ -27,8 +27,8 @@ Follow these exact steps from a freshly cloned terminal:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/muthokaricky-alt/SkillBridge-webapp.git
-cd SkillBridge-webapp/SkillBridge-webapp-main
+git clone https://github.com/BIILL254/SkillBridge-webapp.git
+cd SkillBridge-webapp
 ```
 
 ### 2. Install dependencies
@@ -37,8 +37,11 @@ npm install
 ```
 
 ### 3. Start the API server
+Run any of the following standard commands (they all work):
 ```bash
-npm run server
+npm start
+# or: npm run server
+# or: node server.js
 ```
 The server will start on port `3001`:
 ```text

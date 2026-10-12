@@ -12,6 +12,17 @@ import app from "./app.js";
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`SkillBridge API running at http://localhost:${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`\n[SkillBridge] Port ${PORT} is already in use by another process.`);
+    console.error(`Either stop the other process on port ${PORT}, or run with a custom port:`);
+    console.error(`  PORT=3002 npm start\n`);
+    process.exit(1);
+  } else {
+    console.error("Server error:", err);
+  }
 });
