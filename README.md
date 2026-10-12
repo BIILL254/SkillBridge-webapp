@@ -1,78 +1,430 @@
 # SkillBridge
 
-A full-stack **React + Node.js** platform that connects students to share skills, book learning sessions, and manage skill-exchange requests. SkillBridge also plays a role in a three-team API ring: it **provides** an expert-directory API to **Farmers-AgroConnect** and **consumes** vendor/logistics data from **Maji Website**.
+SkillBridge is a full-stack **React + Node.js** platform that connects students to share skills, book learning sessions, and manage skill-exchange requests. Within our three-team university API ring, SkillBridge **provides** an expert directory, availability scheduling, and consultation booking API to **Farmers-AgroConnect**, and **consumes** vendor/logistics data from **Maji Website**.
 
-Built as a semester project using **React**, **Express**, and **SQLite**.
+Built with **React 18**, **Express 4**, and **SQLite (better-sqlite3)**.
 
 ---
 
-## Preview
+## Quickstart — Make a Real API Call in 10 Seconds
 
-### Home Page
+Pick your terminal and run this single command against a running instance to get a real JSON response immediately:
 
-![SkillBridge Home Page](screenshots/homepage.png)
+```bash
+curl -H "Authorization: Bearer test-token" http://localhost:3001/api/experts
+```
 
-## Features
+> **Note:** The `Authorization: Bearer <token>` header is a Week 8 placeholder (real token authentication arrives in Week 9). Public downstream endpoints also accept open requests without the header:
+> ```bash
+> curl http://localhost:3001/api/experts
+> ```
 
-### Accounts & Access
+---
 
-* Sign up with a username, phone number, and password.
-* Log in as a regular user or an admin.
-* Every account (including admin) starts on a shared default password and is required to set a real one on first login.
-* Change your own password any time from your profile.
-* Admins can register, edit, or delete any account, and reset a user's password directly.
-* Every admin action is written to an audit log (who did what, to whom, when).
+## How to Run the API Locally (Clean Clone from Zero)
 
-### Expert Discovery
+Follow these exact steps from a freshly cloned terminal:
 
-* Browse verified expert profiles.
-* Filter experts by **estate**.
-* Sort by **rating** or **proximity**.
-* View detailed expert profiles.
+### 1. Clone the repository
+```bash
+git clone https://github.com/muthokaricky-alt/SkillBridge-webapp.git
+cd SkillBridge-webapp/SkillBridge-webapp-main
+```
 
-### Skills Marketplace
+### 2. Install dependencies
+```bash
+npm install
+```
 
-* Browse categorized skills, including a dedicated **Agriculture** category (Agronomy, Soil Health, Irrigation Systems, Farm Tech, and more).
-* Filter skills by category tag.
-* Add or remove skills you offer/want from your own profile.
+### 3. Start the API server
+```bash
+npm run server
+```
+The server will start on port `3001`:
+```text
+SkillBridge API running at http://localhost:3001
+```
 
-### Consultation Booking
+* Zero external database setup is required — SQLite (`skillbridge.db`) initializes, creates all tables, and seeds 14 verified mentors, categorized skills, and default accounts automatically on first start.
+* To reset the database to a clean, newly seeded state at any time:
+  ```bash
+  npm run db:reset
+  ```
 
-* View expert availability.
-* Book consultation sessions.
-* Submit learning requests (skill swaps or Skill Coin requests).
-* Track request status.
+### 4. (Optional) Start the frontend
+Open a second terminal window:
+```bash
+npm run dev
+```
+* **Frontend UI:** `http://localhost:5173`
+* **Backend API:** `http://localhost:3001`
 
-### Reviews
+---
 
-* View expert ratings.
-* Read review summaries.
-* See completed session statistics.
+## Interactive Documentation Sites
 
-### Logistics Integration (Maji Website)
+This repository provides rendered browsable API documentation directly from `openapi.yaml`:
 
-* Discover nearby vendor water stations for in-person study sessions.
-* Runs against mock data until Maji's real API is configured — every response is clearly labeled `"source": "mock"` or `"source": "live"`.
+1. **Standalone Redoc Documentation:** Open [`docs/index.html`](docs/index.html) directly in any browser (no server needed — double-click the file or open via `file://`).
+2. **Interactive Swagger UI ("Try It Out"):** Open [`docs/swagger.html`](docs/swagger.html) in your browser for an interactive testing sandbox.
+3. **Live Server Documentation:** When the Express server is running, navigate directly to:
+   * Redoc Documentation: [http://localhost:3001/docs](http://localhost:3001/docs)
+   * Raw OpenAPI Spec: [http://localhost:3001/openapi.yaml](http://localhost:3001/openapi.yaml)
 
-### Interface
+To rebuild the docs from `openapi.yaml` at any time:
+```bash
+npm run docs:build
+```
 
-* Light and dark mode, toggleable from the nav bar.
-* Mobile-responsive navigation (collapses to a slide-down menu on small screens).
-* Keyboard-navigable calendar and accessible labels throughout.
+---
+
+## Authentication Instructions
+
+* **Downstream Partner Endpoints (`/api/experts`, `/api/skills`, `/api/requests`):**
+  These endpoints serve our downstream partner **Farmers-AgroConnect**. In accordance with Week 8 lab specifications, authentication uses an open placeholder. Pass:
+  ```http
+  Authorization: Bearer <token>
+  ```
+  Where `<token>` can be any placeholder string (e.g., `test-token` or `agri-bearer-123`). Requests without the header are also accepted. Full OAuth/JWT arrives in Week 9.
+
+* **Internal Student & Logistics Proxy Endpoints (`/api/logistics`, `/api/profile`, `/api/admin`):**
+  Protected endpoints require a session token generated via login:
+  ```bash
+  curl -X POST http://localhost:3001/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"1234"}'
+  ```
+  Returns:
+  ```json
+  {
+    "token": "0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546",
+    "user": { "id": 15, "name": "Admin", "role": "admin" }
+  }
+  ```
+  Pass the returned token in subsequent requests:
+  ```http
+  Authorization: Bearer 0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546
+  ```
+
+---
+
+## Working Examples per Major Endpoint
+
+Every example below includes the real copy-paste request and the real JSON response returned by the live server.
+
+### 1. List Verified Experts (Filter & Sort)
+Returns a list of verified mentors. Supports filtering by `estate` and sorting by `rating` or `proximity`.
+
+* **Request:**
+  ```bash
+  curl -s "http://localhost:3001/api/experts?estate=Westlands"
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 4,
+      "name": "K.Dot",
+      "estate": "Westlands, Nairobi",
+      "rating": 4.7,
+      "latitude": -1.2676,
+      "longitude": 36.8108,
+      "bio": "Music & Arts mentor offering Content Creation, Music Production, Songwriting.",
+      "skills": [
+        "Content Creation",
+        "Music Production",
+        "Songwriting"
+      ]
+    }
+  ]
+  ```
+
+---
+
+### 2. Get Expert Profile by ID
+Returns detailed profile attributes for a specific expert.
+
+* **Request:**
+  ```bash
+  curl -s http://localhost:3001/api/experts/13
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  {
+    "id": 13,
+    "name": "Amina Farah",
+    "estate": "Ruiru, Kiambu",
+    "rating": 4.9,
+    "latitude": -1.1466,
+    "longitude": 36.9615,
+    "bio": "Agriculture mentor offering Agronomy, Crop Disease Management, Irrigation Systems.",
+    "skills": [
+      "Agronomy",
+      "Crop Disease Management",
+      "Irrigation Systems",
+      "Soil Health"
+    ]
+  }
+  ```
+
+---
+
+### 3. Get Expert Availability
+Returns upcoming available time slots for scheduling a consultation.
+
+* **Request:**
+  ```bash
+  curl -s http://localhost:3001/api/experts/13/availability
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  [
+    {
+      "date": "2026-10-13",
+      "startTime": "09:00:00",
+      "durationMinutes": 60
+    },
+    {
+      "date": "2026-10-13",
+      "startTime": "11:00:00",
+      "durationMinutes": 60
+    },
+    {
+      "date": "2026-10-13",
+      "startTime": "14:00:00",
+      "durationMinutes": 60
+    }
+  ]
+  ```
+
+---
+
+### 4. Get Expert Reviews Summary
+Returns aggregate ratings, review count, and total completed sessions for an expert.
+
+* **Request:**
+  ```bash
+  curl -s http://localhost:3001/api/experts/13/reviews
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  {
+    "rating": 4.9,
+    "reviewCount": 18,
+    "completedSessions": 9
+  }
+  ```
+
+---
+
+### 5. Browse Categorized Skills
+Returns categorized skills available on the platform, filterable by `tag`.
+
+* **Request:**
+  ```bash
+  curl -s "http://localhost:3001/api/skills?tag=Agriculture"
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  [
+    {
+      "id": 68,
+      "name": "Agronomy",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 71,
+      "name": "Crop Disease Management",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 75,
+      "name": "Farm Tech",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 70,
+      "name": "Irrigation Systems",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 76,
+      "name": "Livestock Management",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 77,
+      "name": "Organic Farming",
+      "category": "Agriculture",
+      "offeredBy": 1
+    },
+    {
+      "id": 69,
+      "name": "Soil Health",
+      "category": "Agriculture",
+      "offeredBy": 1
+    }
+  ]
+  ```
+
+---
+
+### 6. Book a Consultation Request (Farmers-AgroConnect)
+Allows a farmer to submit a consultation booking request for a verified expert.
+
+* **Request (Bash / Linux / macOS):**
+  ```bash
+  curl -s -X POST http://localhost:3001/api/requests \
+    -H "Content-Type: application/json" \
+    -d '{
+      "farmerName": "John Kamau",
+      "topic": "Irrigation Systems",
+      "expertId": 13,
+      "date": "2026-10-15T10:00:00Z"
+    }'
+  ```
+* **Request (Windows PowerShell):**
+  ```powershell
+  Invoke-RestMethod -Uri http://localhost:3001/api/requests -Method Post -ContentType "application/json" -Body '{"farmerName":"John Kamau","topic":"Irrigation Systems","expertId":13,"date":"2026-10-15T10:00:00Z"}'
+  ```
+* **Real Response (`201 Created`):**
+  ```json
+  {
+    "requestId": 5,
+    "status": "Pending"
+  }
+  ```
+
+---
+
+### 7. Discover Vendor Water Stations (Maji Logistics Proxy)
+Proxies upstream water station availability from Maji Website. (Requires logged-in session token).
+
+* **Request:**
+  ```bash
+  curl -s "http://localhost:3001/api/logistics/stations?estate=Kileleshwa" \
+    -H "Authorization: Bearer 0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546"
+  ```
+* **Real Response (`200 OK`):**
+  ```json
+  {
+    "source": "mock",
+    "stations": [
+      {
+        "vendorId": "vnd_kileleshwa_1",
+        "stationName": "Kileleshwa Water Hub",
+        "targetEstateId": "est_kileleshwa"
+      }
+    ]
+  }
+  ```
+
+---
+
+## Error Format Reference
+
+All API errors return a consistent, unambiguous JSON payload with an `"error"` description message and the corresponding HTTP status code. Callers never need to guess failure reasons.
+
+### 1. Resource Not Found (`404 Not Found`)
+* **Trigger:** Calling an expert ID that does not exist.
+* **Request:** `GET /api/experts/9999`
+* **Response (`404 Not Found`):**
+  ```json
+  {
+    "error": "Expert not found"
+  }
+  ```
+
+### 2. Invalid Query Parameters (`400 Bad Request`)
+* **Trigger:** Supplying an unsupported sort parameter.
+* **Request:** `GET /api/experts?sort=alphabetical`
+* **Response (`400 Bad Request`):**
+  ```json
+  {
+    "error": "sort must be 'rating' or 'proximity'"
+  }
+  ```
+
+### 3. Missing Required Request Body Fields (`400 Bad Request`)
+* **Trigger:** Submitting a consultation booking missing `expertId` or `date`.
+* **Request:** `POST /api/requests` with body `{"farmerName": "John Kamau"}`
+* **Response (`400 Bad Request`):**
+  ```json
+  {
+    "error": "farmerName, topic, expertId, and date are required"
+  }
+  ```
+
+### 4. Invalid Foreign Key Reference (`404 Not Found`)
+* **Trigger:** Booking a consultation for an expert ID that does not exist in the database.
+* **Request:** `POST /api/requests` with `expertId: 9999`
+* **Response (`404 Not Found`):**
+  ```json
+  {
+    "error": "expertId does not match any SkillBridge expert"
+  }
+  ```
+
+### 5. Missing Authentication on Protected Routes (`401 Unauthorized`)
+* **Trigger:** Calling `/api/logistics/stations` without an `Authorization: Bearer <token>` header.
+* **Request:** `GET /api/logistics/stations`
+* **Response (`401 Unauthorized`):**
+  ```json
+  {
+    "error": "Not logged in"
+  }
+  ```
+
+---
+
+## Seed Accounts & Login Credentials
+
+All seeded accounts share the default password `1234` and are prompted to set a real password on first login via the web UI.
+
+| Account Type | Username | Default Password | Role |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin` | `1234` | Full administrative access & audit log |
+| **Agricultural Mentor** | `aminafarah` | `1234` | Verified Agronomy & Soil Health expert |
+| **Student (Bill Amani)** | `billamani` | `1234` | Regular student user |
+| **Student (Jessica)** | `jessica` | `1234` | Design & UI/UX student |
+
+---
+
+## Automated Test Suite
+
+SkillBridge includes 272 automated tests across 10 test suites covering route validation, error status codes, authentication, SQLite migrations, and upstream contract mocking.
+
+Run the entire test suite:
+```bash
+npm test
+```
+
+Expected output:
+```text
+Test Suites: 10 passed, 10 total
+Tests:       272 passed, 272 total
+Snapshots:   0 total
+Time:        4.415 s
+Ran all test suites.
+```
 
 ---
 
 ## Tech Stack
 
-| Layer         | Technology                     |
-| ------------- | ------------------------------- |
-| Frontend      | React 18 + Vite                 |
-| Backend       | Node.js + Express                |
-| Database      | SQLite (better-sqlite3)          |
-| Auth          | bcryptjs (password hashing) + opaque bearer tokens |
-| Styling       | Tailwind CSS + CSS variables (theming) |
-| API           | REST                             |
-| Documentation | OpenAPI 3.0                      |
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | React 18 + Vite |
+| **Backend** | Node.js + Express 4 |
+| **Database** | SQLite via `better-sqlite3` (zero-config, local file `skillbridge.db`) |
+| **Documentation** | OpenAPI 3.0.3, Redocly, Swagger UI |
+| **Testing** | Jest + Supertest (10 suites, 272 tests) |
+| **Auth** | bcryptjs password hashing + opaque Bearer session tokens |
 
 ---
 
@@ -81,219 +433,34 @@ Built as a semester project using **React**, **Express**, and **SQLite**.
 ```text
 SkillBridge-webapp-main/
 │
-├── src/
-│   ├── components/
-│   ├── context/          # AuthContext (login/signup/session state)
-│   ├── pages/             # incl. AuthScreen, AdminPage, ForcePasswordChangeScreen
-│   ├── documentation/
-│   ├── App.jsx
-│   └── api.js
+├── docs/                     # Published documentation site
+│   ├── index.html            # Pre-rendered standalone Redoc docs page
+│   ├── swagger.html          # Interactive Swagger UI sandbox
+│   └── openapi.json          # Bundled JSON spec
 │
 ├── server/
-│   ├── routes/            # incl. auth.routes.js, admin.routes.js
-│   ├── middleware/         # requireAuth, requireAdmin
-│   ├── services/           # majiClient.js (upstream integration)
-│   ├── db.js
-│   └── server.js
+│   ├── routes/               # API route handlers (experts, skills, requests, logistics, auth, admin)
+│   ├── middleware/           # auth.js, requireAdmin
+│   ├── services/             # majiClient.js (upstream Maji integration)
+│   ├── app.js                # Express app setup and static docs mounting
+│   ├── db.js                 # SQLite schema, migrations, and seed data
+│   ├── reset-db.js           # Database reset script
+│   └── server.js             # HTTP listener
 │
-├── openapi.yaml
+├── src/                      # React frontend application
+│   ├── components/           # Navbar, Calendar, Modals
+│   ├── context/              # AuthContext
+│   └── pages/                # Marketplace, ExpertProfile, AdminPage
+│
+├── __tests__/                # 10 test suites (272 tests)
+├── openapi.yaml              # OpenAPI 3.0 contract
+├── BLIND_TEST_REPORT.md      # Week 8 Blind Swap & Testing Report
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## Installation
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/muthokaricky-alt/SkillBridge-webapp.git
-cd SkillBridge-webapp
-```
-
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure environment variables (optional)
-
-Copy the example file if you want to point the frontend at a different backend URL, or configure a real Maji Website API:
-
-```bash
-cp .env.example .env
-```
-
-No configuration is required for local development — the database and default accounts are created automatically.
-
-### 4. Start the backend
-
-```bash
-npm run server
-```
-
-### 5. Start the frontend
-
-Open another terminal:
-
-```bash
-npm run dev
-```
-
-The application will be available at:
-
-* Frontend: `http://localhost:5173`
-* Backend: `http://localhost:3001`
-
-### 6. Log in
-
-Every account starts on the same default password and must change it on first login.
-
-| Account | Username | Default password |
-| ------- | -------- | ----------------- |
-| Admin   | `admin`  | `1234`             |
-| Any seeded student (e.g. Bill Amani) | auto-generated from their name, e.g. `billamani` | `1234` |
-
-Or sign up as a brand-new user from the login screen.
-
----
-
-## API Overview
-
-Full endpoint-by-endpoint detail lives in `src/documentation/DATABASE.md` and `openapi.yaml`; this is a quick map of what exists.
-
-### Auth
-
-| Method | Endpoint          | Description                        |
-| ------ | ------------------ | ----------------------------------- |
-| POST   | `/api/auth/signup`  | Create a new user account           |
-| POST   | `/api/auth/login`   | Log in with username + password     |
-| POST   | `/api/auth/logout`  | Invalidate the current session token |
-| GET    | `/api/auth/me`      | Get the currently logged-in user    |
-| PATCH  | `/api/auth/password`| Change your own password (needs old password) |
-
-### Admin (requires an admin account)
-
-| Method | Endpoint                        | Description                     |
-| ------ | -------------------------------- | -------------------------------- |
-| GET    | `/api/admin/users`               | List every account, full details |
-| POST   | `/api/admin/users`                | Register a new account            |
-| PATCH  | `/api/admin/users/:id`            | Edit any account                  |
-| PATCH  | `/api/admin/users/:id/password`   | Reset a user's password directly  |
-| DELETE | `/api/admin/users/:id`            | Delete an account                 |
-| GET    | `/api/admin/audit-log`            | View every admin action taken     |
-
-### Profile, Requests, Sessions (require login)
-
-| Method | Endpoint                          | Description                    |
-| ------ | ----------------------------------- | -------------------------------- |
-| GET    | `/api/profile`                       | Your profile, skills, coins    |
-| POST   | `/api/profile/skills`                | Add a skill you offer/want      |
-| DELETE | `/api/profile/skills/:type/:value`   | Remove a skill                  |
-| PATCH  | `/api/profile/coins`                 | Adjust Skill Coin balance        |
-| GET    | `/api/requests`                       | List skill-exchange requests    |
-| POST   | `/api/requests`                       | Create a request (or, for AgroConnect, a consultation booking) |
-| GET    | `/api/sessions`                       | List booked sessions             |
-| POST   | `/api/sessions`                       | Schedule a session                |
-
-### Downstream — provided to Farmers-AgroConnect (no login required)
-
-| Method | Endpoint                       | Description         |
-| ------ | -------------------------------- | ---------------------- |
-| GET    | `/api/experts`                    | List experts, filterable/sortable |
-| GET    | `/api/experts/{id}`               | Expert details        |
-| GET    | `/api/experts/{id}/availability`  | Open time slots        |
-| GET    | `/api/experts/{id}/reviews`       | Aggregate rating/reviews |
-| GET    | `/api/skills`                      | Categorized skill catalogue |
-
-### Upstream — consumed from Maji Website (proxied through our backend)
-
-| Method | Endpoint                    | Description               |
-| ------ | ----------------------------- | --------------------------- |
-| GET    | `/api/logistics/stations`      | Nearby vendor water stations |
-| GET    | `/api/logistics/estates`       | Estates with active delivery |
-
-See `src/documentation/CONTRACT_QUESTIONS.md` for what's genuinely different between our original assumptions and Maji's real API (notably: no delivery-tracking or per-estate payment-methods endpoints exist upstream).
-
----
-
-## OpenAPI Documentation
-
-This project includes an OpenAPI 3.0 specification covering the AgroConnect/Maji ring contract:
-
-* `openapi.yaml`
-
-To validate it, paste it into [Swagger Editor](https://editor.swagger.io) and confirm zero validation errors.
-
----
-
-## Database
-
-SkillBridge uses **SQLite** via `better-sqlite3` — a single local file (`skillbridge.db`), created and migrated automatically on first run. No separate database server needed. See `src/documentation/DATABASE.md` for the full schema.
-
-Reset the database anytime with:
-
-```bash
-npm run db:reset
-```
-
----
-
-## Development Scripts
-
-| Command              | Purpose                             |
-| --------------------- | ------------------------------------- |
-| `npm run dev`          | Start Vite (frontend)                |
-| `npm run dev -- --host`| Start Vite, reachable from other devices on the network |
-| `npm run build`        | Production build                     |
-| `npm run preview`      | Preview build                        |
-| `npm run server`       | Start Express server                 |
-| `npm run server:dev`   | Start server with Nodemon             |
-| `npm run db:reset`     | Reset SQLite database                 |
-
----
-
-## Documentation
-
-Additional documentation is located in `src/documentation/`, including:
-
-* `API_NEEDS.md`, `API_NEEDS_DOWNSTREAM.md`, `API_NEEDS_UPSTREAM.md` — Week 2 needs statements
-* `ENDPOINT_LIST.md` — Week 3 endpoint design + peer review
-* `CONTRACT_QUESTIONS.md` — questions raised after reviewing Maji's real contract
-* `DATABASE.md` — full schema reference
-* `PART_B_AUDIT.md` — Week 1 resource/action audit
-* `TEAM_CHARTER.md`, `CONTRIBUTORS.md` — team process docs
-
-The first three and `PART_B_AUDIT.md`/`ENDPOINT_LIST.md` are dated weekly lab deliverables and are kept as historical snapshots rather than updated to match later changes.
-
----
-
-## Future Improvements
-
-* Real (non-mock) integration with Maji Website once their live API is available
-* Per-user scoping for requests/sessions (currently a shared list across all logged-in accounts)
-* Session token expiry
-* Real-time chat / notifications
-* Image uploads for profiles
-* Deployment (Render/Vercel)
-* Analytics dashboard
-
----
-
-## Contributors
-
-Developed as a collaborative university project.
-
-See:
-
-```text
-src/documentation/CONTRIBUTORS.md
-```
-
----
-
 ## License
 
-This project is intended for educational purposes as part of a university software engineering project.
+This project is developed for educational purposes as part of a university software engineering curriculum.

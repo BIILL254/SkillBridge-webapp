@@ -1,4 +1,13 @@
-# Contract Deviations — Week 6
+# Contract Deviations
+
+## Week 7 check-in
+
+Reviewed against this week's changes (automated tests + the fixes they
+surfaced — see PARTNER_TEST_RESULTS.md and the test suite in `__tests__/`).
+Nothing new to add here: everything fixed this week brought the
+implementation in line with `openapi.yaml`, which already existed — none of
+it was a deliberate deviation. The three entries below, from Week 6, are
+still accurate as written.
 
 Places where a write endpoint's real behavior deliberately differs from the
 strictest reading of the Week 6 rules (PUT/PATCH must be idempotent,

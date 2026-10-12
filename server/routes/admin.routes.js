@@ -8,6 +8,7 @@
 
 import { Router } from "express";
 import {
+  VALID_ROLES,
   adminGetAllUsers,
   adminUpdateUser,
   adminDeleteUser,
@@ -39,6 +40,10 @@ router.post("/users", asyncHandler(async (req, res) => {
   const { name, username, phone, password, role } = req.body;
   if (!name || !username || !phone || !password) {
     return res.status(400).json({ error: "name, username, phone, and password are required" });
+  }
+  // validate role BEFORE creating anything, so a bad role can't leave a half-made account behind
+  if (role !== undefined && !VALID_ROLES.includes(role)) {
+    return res.status(400).json({ error: "role must be 'user' or 'admin'" });
   }
   let user = await createUser({ name, username, phone, password });
   if (role === "admin") {

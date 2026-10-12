@@ -25,6 +25,7 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test", // a test suite logs in far more than 10x/15min
   message: { error: "Too many login attempts. Please wait a few minutes and try again." },
 });
 
@@ -35,6 +36,7 @@ const signupLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
   message: { error: "Too many signup attempts from this connection. Please wait a few minutes." },
 });
 

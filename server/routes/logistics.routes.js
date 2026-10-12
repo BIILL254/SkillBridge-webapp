@@ -14,6 +14,7 @@
 // doesn't exist.
 
 import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
 import {
   getStations,
   getEstates,
@@ -24,6 +25,10 @@ import {
 
 const router = Router();
 
+// This is a proxy to a partner's service: keep it (especially the write routes)
+// behind login so anonymous traffic can't burn Maji's quota or spam it.
+router.use(requireAuth);
+
 router.get("/stations", async (req, res, next) => {
   try {
     res.json(await getStations(req.query.estate));
@@ -32,8 +37,12 @@ router.get("/stations", async (req, res, next) => {
 
 // ?deliveryStatus=active|inactive, matches Maji's real /estates contract
 router.get("/estates", async (req, res, next) => {
+  const { deliveryStatus } = req.query;
+  if (deliveryStatus !== undefined && !["active", "inactive"].includes(deliveryStatus)) {
+    return res.status(400).json({ error: "deliveryStatus must be 'active' or 'inactive'" });
+  }
   try {
-    res.json(await getEstates(req.query.deliveryStatus));
+    res.json(await getEstates(deliveryStatus));
   } catch (err) { next(err); }
 });
 
@@ -56,6 +65,13 @@ router.post("/deliveries", async (req, res, next) => {
 // POST /logistics/estates/:estateId/driver-interests — not currently used
 // by any SkillBridge UI, but wired up since it's a real Maji capability.
 router.post("/estates/:estateId/driver-interests", async (req, res, next) => {
+  const { userId, contactMethod } = req.body;
+  if (typeof userId !== "string" || !userId.trim()) {
+    return res.status(400).json({ error: "userId is required and must be a non-empty string" });
+  }
+  if (contactMethod !== undefined && typeof contactMethod !== "string") {
+    return res.status(400).json({ error: "contactMethod must be a string" });
+  }
   try {
     res.status(201).json(await registerDriverInterest(req.params.estateId, req.body));
   } catch (err) { next(err); }

@@ -2,6 +2,7 @@
 import { Router } from "express";
 import {
   getRequests,
+  getRequestById,
   addRequest,
   updateRequestStatus,
   removeRequest,
@@ -16,8 +17,9 @@ const router = Router();
 
 // GET/PATCH/DELETE are all SkillBridge-internal actions (viewing your
 // requests, accepting/declining) — these require a logged-in student.
+// Only requests I'm part of — not everyone's.
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
-  res.json(await getRequests());
+  res.json(await getRequests(req.user.id));
 }));
 
 // POST is special: it serves TWO different callers with different auth
@@ -30,7 +32,10 @@ router.post("/", asyncHandler(async (req, res) => {
   // an expertId field, which SkillBridge's own swap/coin requests never do.
   // Deliberately NOT behind requireAuth — AgroConnect is an external
   // partner service, not a logged-in SkillBridge student.
-  if (req.body.expertId !== undefined) {
+  // Any of the consultation-only fields marks it as AgroConnect's shape (so a
+  // booking that forgot expertId gets a helpful 400, not a confusing 401).
+  const isConsultation = ["expertId", "farmerName", "topic"].some((k) => req.body[k] !== undefined);
+  if (isConsultation) {
     return consultationHandler(req, res);
   }
 
@@ -50,6 +55,12 @@ router.post("/", asyncHandler(async (req, res) => {
   if (!msg || !want || !type) {
     return res.status(400).json({ error: "msg, want, and type are required" });
   }
+  if (typeof msg !== "string" || !msg.trim() || typeof want !== "string" || !want.trim()) {
+    return res.status(400).json({ error: "msg and want must be non-empty strings" });
+  }
+  if (offer !== undefined && offer !== null && typeof offer !== "string") {
+    return res.status(400).json({ error: "offer must be a string" });
+  }
   if (!["swap", "coin"].includes(type)) {
     return res.status(400).json({ error: "type must be 'swap' or 'coin' (use expertId for a consultation booking)" });
   }
@@ -61,18 +72,41 @@ router.post("/", asyncHandler(async (req, res) => {
   res.status(201).json(newRequest);
 }));
 
+const VALID_STATUSES = ["sent", "incoming", "accepted", "declined"];
+
+// Loads a request and checks it exists (404) and that the caller is part of it (403).
+// Returns the request, or null after having already sent the error response.
+async function loadMyRequest(req, res) {
+  const existing = await getRequestById(Number(req.params.id));
+  if (!existing) {
+    res.status(404).json({ error: "Request not found" });
+    return null;
+  }
+  if (existing.fromId !== req.user.id && existing.toId !== req.user.id) {
+    res.status(403).json({ error: "You can only change requests you are part of" });
+    return null;
+  }
+  return existing;
+}
+
 router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ error: "status is required" });
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${VALID_STATUSES.join(", ")}` });
+  }
 
-  const updated = await updateRequestStatus(Number(req.params.id), status);
-  if (!updated) return res.status(404).json({ error: "Request not found" });
-  res.json(updated);
+  const existing = await loadMyRequest(req, res);
+  if (!existing) return;
+
+  res.json(await updateRequestStatus(existing.id, status));
 }));
 
 router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
-  const deleted = await removeRequest(Number(req.params.id));
-  if (!deleted) return res.status(404).json({ error: "Request not found" });
+  const existing = await loadMyRequest(req, res);
+  if (!existing) return;
+
+  await removeRequest(existing.id);
   res.status(204).end();
 }));
 

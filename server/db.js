@@ -15,7 +15,10 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const db = new Database(path.join(__dirname, "..", "skillbridge.db"));
+// SKILLBRIDGE_DB lets the automated tests point at an in-memory database
+// (":memory:") so running the test suite never touches your real
+// skillbridge.db. Unset in normal use, so nothing changes for `npm run server`.
+const db = new Database(process.env.SKILLBRIDGE_DB || path.join(__dirname, "..", "skillbridge.db"));
 
 db.pragma("foreign_keys = ON");
 db.pragma("journal_mode = WAL");
@@ -376,6 +379,13 @@ function generateInitials(name) {
   }
 }
 
+// Every account needs a profiles row (it holds the Skill Coin balance), but
+// the original seed only ever created one for user 1 — so for everyone else,
+// "earn a coin" logged a history row and then updated ZERO rows, leaving the
+// balance stuck at 0. Backfill the missing rows here, and adjustCoins()
+// below also guarantees the row exists as a second line of defence.
+db.prepare("INSERT OR IGNORE INTO profiles (user_id, coins) SELECT id, 0 FROM users").run();
+
 // ---------------------------------------------------------------------------
 // Read helpers
 // ---------------------------------------------------------------------------
@@ -390,7 +400,8 @@ async function getSkillsForUser(userId, type) {
 }
 
 export async function getUsers() {
-  const users = db.prepare("SELECT * FROM users ORDER BY id").all();
+  // the admin account is not a student: keep it out of Discover / expert listings
+  const users = db.prepare("SELECT * FROM users WHERE role != 'admin' ORDER BY id").all();
   return Promise.all(users.map(async (user) => ({
     id: user.id,
     name: user.name,
@@ -428,53 +439,68 @@ function distanceKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// Shapes a SkillBridge user into the contract's `Expert` schema (openapi.yaml):
+// id, name, estate, rating, latitude, longitude are REQUIRED, bio optional.
+// `skills` and `distanceKm` are extra, additive fields the contract doesn't forbid.
+function toExpert(u) {
+  return {
+    id: u.id,
+    name: u.name,
+    estate: u.estate,
+    rating: Number(u.rating),
+    latitude: Number(u.lat),
+    longitude: Number(u.lng),
+    bio: u.offers.length ? `${u.dept} mentor offering ${u.offers.slice(0, 3).join(", ")}.` : `${u.dept} mentor.`,
+    skills: u.offers,
+  };
+}
+
+// A user only counts as an "expert" once they have a location — the contract
+// makes estate/latitude/longitude required, so a student who signed up
+// themselves (no estate/coordinates yet) is deliberately NOT listed.
+const isExpert = (u) => Boolean(u.estate) && u.lat != null && u.lng != null;
+
 export async function getExperts({ estate, sort, lat, lng } = {}) {
-  const users = await getUsers();
-  let experts = users.map((u) => ({
-    id: u.id, name: u.name, estate: u.estate,
-    coordinates: { lat: u.lat, lng: u.lng },
-    rating: u.rating, reviews: u.reviews, skills: u.offers,
-  }));
+  const users = (await getUsers()).filter(isExpert);
+  let experts = users.map(toExpert);
 
   if (estate) {
     const needle = estate.toLowerCase();
-    experts = experts.filter((e) => e.estate?.toLowerCase().includes(needle));
+    experts = experts.filter((e) => e.estate.toLowerCase().includes(needle));
   }
 
-  if (sort === "proximity" && lat != null && lng != null) {
+  if (sort === "proximity") {
     experts = experts
-      .map((e) => ({ ...e, distanceKm: Math.round(distanceKm(Number(lat), Number(lng), e.coordinates.lat, e.coordinates.lng) * 10) / 10 }))
+      .map((e) => ({ ...e, distanceKm: Math.round(distanceKm(Number(lat), Number(lng), e.latitude, e.longitude) * 10) / 10 }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
   } else {
-    experts.sort((a, b) => b.rating - a.rating);
+    experts.sort((a, b) => b.rating - a.rating); // default and sort=rating
   }
   return experts;
 }
 
 export async function getExpertById(id) {
   const u = await getUserById(id);
-  if (!u) return null;
-  return {
-    id: u.id, name: u.name, dept: u.dept, estate: u.estate,
-    coordinates: { lat: u.lat, lng: u.lng },
-    rating: u.rating, reviews: u.reviews, swaps: u.swaps, skills: u.offers,
-  };
+  if (!u || !isExpert(u)) return null;
+  return toExpert(u);
 }
 
+// Contract `ReviewSummary`: rating, reviewCount, completedSessions.
 export async function getExpertReviews(id) {
   const u = await getUserById(id);
-  if (!u) return null;
-  return { expertId: u.id, rating: u.rating, reviews: u.reviews, completedSwaps: u.swaps };
+  if (!u || !isExpert(u)) return null;
+  return { rating: Number(u.rating), reviewCount: u.reviews, completedSessions: u.swaps };
 }
 
 const DAILY_SLOT_TEMPLATE = ["09:00", "11:00", "14:00", "16:00"];
 
+// Contract: an ARRAY of `Availability` { date: "YYYY-MM-DD", startTime: "HH:MM:SS", durationMinutes }.
 export async function getExpertAvailability(id) {
   const u = await getUserById(id);
-  if (!u) return null;
+  if (!u || !isExpert(u)) return null;
 
   const sessions = await getSessions();
-  const bookedByDate = new Set(
+  const booked = new Set(
     sessions.filter((s) => s.with.toLowerCase() === u.name.toLowerCase()).map((s) => `${s.date}_${s.time}`)
   );
 
@@ -485,33 +511,45 @@ export async function getExpertAvailability(id) {
     d.setDate(d.getDate() + dayOffset);
     const dateStr = d.toISOString().slice(0, 10);
     for (const time of DAILY_SLOT_TEMPLATE) {
-      if (!bookedByDate.has(`${dateStr}_${time}`)) slots.push({ date: dateStr, time, durationMinutes: 60 });
+      if (!booked.has(`${dateStr}_${time}`)) slots.push({ date: dateStr, startTime: `${time}:00`, durationMinutes: 60 });
     }
   }
-  return { expertId: u.id, slots };
+  return slots;
 }
 
+// Contract `Skill`: id, name, category. `tag` matches a category (Agriculture)
+// OR a skill name (Agronomy), case-insensitively — the contract's own example
+// for tag is "Agronomy", which is a skill, so both readings are supported.
 export async function getSkillsByCategory(tag) {
   const sql = `
-    SELECT s.name, s.category, COUNT(us.user_id) AS offeredBy
+    SELECT s.id, s.name, s.category, COUNT(us.user_id) AS offeredBy
     FROM skills s
     LEFT JOIN user_skills us ON us.skill_id = s.id AND us.type = 'offer'
-    ${tag ? "WHERE s.category = ?" : ""}
+    ${tag ? "WHERE LOWER(s.category) = LOWER(?) OR LOWER(s.name) = LOWER(?)" : ""}
     GROUP BY s.id
     ORDER BY s.category, s.name
   `;
-  return db.prepare(sql).all(...(tag ? [tag] : []));
+  return db.prepare(sql).all(...(tag ? [tag, tag] : []));
 }
 
 // ---------------------------------------------------------------------------
 // Requests / sessions / profile
 // ---------------------------------------------------------------------------
-export async function getRequests() {
+// Only the requests the given user is part of (as sender or recipient).
+export async function getRequests(userId) {
   return db.prepare(`
     SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
            msg, time_text AS time, status
-    FROM requests ORDER BY id
-  `).all();
+    FROM requests WHERE from_id = ? OR to_id = ? ORDER BY id
+  `).all(userId, userId);
+}
+
+export async function getRequestById(id) {
+  return db.prepare(`
+    SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
+           msg, time_text AS time, status
+    FROM requests WHERE id = ?
+  `).get(id) || null;
 }
 
 export async function addRequest({ fromId, toId, offer, want, type, msg }) {
@@ -606,8 +644,15 @@ export async function updateOwnProfileInfo(userId, fields) {
     err.status = 400;
     throw err;
   }
+  for (const [key, value] of updates) {
+    if (typeof value !== "string") {
+      const err = new Error(`${key} must be a string`);
+      err.status = 400;
+      throw err;
+    }
+  }
   const setClause = updates.map(([key]) => `${key} = ?`).join(", ");
-  const values = updates.map(([, value]) => value);
+  const values = updates.map(([, value]) => value.trim());
   db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values, userId);
 
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
@@ -641,6 +686,7 @@ export async function adjustCoins(userId, delta, reason) {
     throw err;
   }
   const tx = db.transaction(() => {
+    db.prepare("INSERT OR IGNORE INTO profiles (user_id, coins) VALUES (?, 0)").run(userId);
     db.prepare("UPDATE profiles SET coins = coins + ? WHERE user_id = ?").run(delta, userId);
     db.prepare(`
       INSERT INTO coin_history (user_id, action, change, date_text)
@@ -689,11 +735,12 @@ export async function verifyPassword(plain, hash) {
   return bcrypt.compare(plain, hash);
 }
 
+const USERNAME_PATTERN = /^[a-z0-9._-]{3,30}$/;
 const PHONE_PATTERN = /^0[17]\d{8}$/; // Kenyan format: 07xxxxxxxx or 01xxxxxxxx
 
 export async function createUser({ name, username, phone, password }) {
   const normalizedUsername = username.toLowerCase().trim();
-  if (!/^[a-z0-9._-]{3,30}$/.test(normalizedUsername)) {
+  if (!USERNAME_PATTERN.test(normalizedUsername)) {
     const err = new Error("Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)");
     err.status = 400;
     throw err;
@@ -800,14 +847,67 @@ export async function adminGetAllUsers() {
 }
 
 const ADMIN_EDITABLE_FIELDS = ["name", "username", "phone", "dept", "role", "online", "rating", "reviews", "swaps", "estate"];
+export const VALID_ROLES = ["user", "admin"];
 
-export async function adminUpdateUser(id, fields) {
+function badRequest(message, status = 400) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+// Validates + normalizes an admin edit BEFORE anything is written, so a bad
+// value can never reach the database (and a request with one good field and
+// one bad field writes neither). Returns [column, value] pairs ready to save.
+function validateAdminUpdate(id, fields) {
   const updates = Object.entries(fields).filter(([key]) => ADMIN_EDITABLE_FIELDS.includes(key));
   if (updates.length === 0) {
-    const err = new Error(`No editable fields provided. Allowed: ${ADMIN_EDITABLE_FIELDS.join(", ")}`);
-    err.status = 400;
-    throw err;
+    throw badRequest(`No editable fields provided. Allowed: ${ADMIN_EDITABLE_FIELDS.join(", ")}`);
   }
+
+  return updates.map(([key, value]) => {
+    switch (key) {
+      case "name":
+        if (typeof value !== "string" || !value.trim()) throw badRequest("name must be a non-empty string");
+        return [key, value.trim()];
+      case "dept":
+      case "estate":
+        if (typeof value !== "string") throw badRequest(`${key} must be a string`);
+        return [key, value.trim()];
+      case "role":
+        if (!VALID_ROLES.includes(value)) throw badRequest("role must be 'user' or 'admin'");
+        return [key, value];
+      case "phone":
+        if (typeof value !== "string" || !PHONE_PATTERN.test(value)) {
+          throw badRequest("phone must be in the format 07XXXXXXXX or 01XXXXXXXX");
+        }
+        return [key, value];
+      case "username": {
+        const normalized = typeof value === "string" ? value.toLowerCase().trim() : "";
+        if (!USERNAME_PATTERN.test(normalized)) {
+          throw badRequest("Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)");
+        }
+        const clash = db.prepare("SELECT id FROM users WHERE username = ? AND id != ?").get(normalized, id);
+        if (clash) throw badRequest("That username is already taken", 409);
+        return [key, normalized];
+      }
+      case "rating":
+        if (typeof value !== "number" || !(value >= 0 && value <= 5)) throw badRequest("rating must be a number between 0 and 5");
+        return [key, value];
+      case "reviews":
+      case "swaps":
+        if (!Number.isInteger(value) || value < 0) throw badRequest(`${key} must be a whole number, 0 or more`);
+        return [key, value];
+      case "online":
+        if (typeof value !== "boolean" && value !== 0 && value !== 1) throw badRequest("online must be true or false");
+        return [key, value ? 1 : 0];
+      default:
+        return [key, value];
+    }
+  });
+}
+
+export async function adminUpdateUser(id, fields) {
+  const updates = validateAdminUpdate(id, fields);
   const setClause = updates.map(([key]) => `${key} = ?`).join(", ");
   const values = updates.map(([, value]) => value);
   const result = db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values, id);

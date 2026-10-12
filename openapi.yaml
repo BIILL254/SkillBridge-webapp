@@ -7,16 +7,27 @@ info:
     API contract for SkillBridge based on the Week 3 endpoint list.
     This API provides expert discovery, consultation booking,
     logistics integration with Maji Website, and delivery tracking.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:3000/api
+  - url: http://localhost:3001/api
     description: Local development server
+
+security:
+  - bearerAuth: []
+  - {}
 
 tags:
   - name: Experts
+    description: Verified expert discovery, profile lookup, availability slots, and reviews
   - name: Skills
+    description: Categorized skill marketplace catalogue and filterable skill offers
   - name: Requests
+    description: Consultation booking requests for farmers and skill-exchange requests
   - name: Logistics
+    description: Upstream logistics integration with Maji Website water stations and delivery orders
 
 paths:
 
@@ -58,6 +69,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expert"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /experts/{id}:
     get:
@@ -96,6 +109,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Skill"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /experts/{id}/availability:
     get:
@@ -180,6 +195,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Station"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /estates:
     get:
@@ -195,6 +212,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Estate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /payment-methods:
     get:
@@ -210,6 +229,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PaymentMethod"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /deliveries/{id}:
     get:
@@ -230,6 +251,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Delivery"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /deliveries:
     post:
@@ -253,6 +276,15 @@ paths:
           $ref: "#/components/responses/BadRequest"
 
 components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+      description: >
+        Bearer token placeholder for Week 9 authentication. Pass 'Authorization: Bearer <token>'.
+        For Week 8, public downstream endpoints accept any placeholder token or open requests.
 
   parameters:
     ExpertId:
@@ -352,7 +384,6 @@ components:
           example: "2026-09-15"
         startTime:
           type: string
-          format: time
           example: "10:00:00"
         durationMinutes:
           type: integer

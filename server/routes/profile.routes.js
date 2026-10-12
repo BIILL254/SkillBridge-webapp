@@ -32,22 +32,28 @@ router.patch("/", asyncHandler(async (req, res) => {
 router.post("/skills", asyncHandler(async (req, res) => {
   const { type, value } = req.body;
 
-  if (!value || !["offer", "want"].includes(type)) {
-    return res.status(400).json({
-      error: "type must be 'offer' or 'want', and value is required",
-    });
+  // validate first, write second: nothing below runs unless every check passes
+  if (!["offer", "want"].includes(type)) {
+    return res.status(400).json({ error: "type must be 'offer' or 'want'" });
+  }
+  if (typeof value !== "string" || !value.trim()) {
+    return res.status(400).json({ error: "value must be a non-empty string" });
+  }
+  const skill = value.trim();
+  if (skill.length > 60) {
+    return res.status(400).json({ error: "value must be 60 characters or fewer" });
   }
 
   const profile = await getProfile(req.user.id);
   const key = type === "offer" ? "offers" : "wants";
-  if (profile[key].some(s => s.toLowerCase() === value.toLowerCase())) {
+  if (profile[key].some(s => s.toLowerCase() === skill.toLowerCase())) {
     return res.status(409).json({ error: "Skill already in list" });
   }
 
-  await addProfileSkill(req.user.id, type, value);
+  await addProfileSkill(req.user.id, type, skill);
 
   if (type === "offer") {
-    await adjustCoins(req.user.id, 1, `Added skill: ${value}`);
+    await adjustCoins(req.user.id, 1, `Added skill: ${skill}`);
   }
 
   res.status(201).json(await getProfile(req.user.id));
