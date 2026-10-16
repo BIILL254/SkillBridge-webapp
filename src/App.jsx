@@ -18,6 +18,20 @@ import AdminPage from "./pages/AdminPage.jsx";
 import AuthScreen from "./pages/AuthScreen.jsx";
 import ForcePasswordChangeScreen from "./pages/ForcePasswordChangeScreen.jsx";
 
+// The pills above the Discover grid are a mix of skill names ("Sales") and
+// categories ("Agriculture"). A category isn't a substring of its skills'
+// names, so "Agriculture" used to match nobody. Match the tag against the
+// person's skills AND their dept, plus a few related keywords for categories.
+const TAG_KEYWORDS = {
+  agriculture: ["agronomy", "soil", "irrigation", "crop", "farm", "livestock", "organic", "pest", "greenhouse"],
+};
+function matchesTag(u, tag) {
+  const t = tag.toLowerCase();
+  const terms = [t, ...(TAG_KEYWORDS[t] || [])];
+  const haystack = [...u.offers, ...u.wants, u.dept || ""].map((s) => s.toLowerCase());
+  return haystack.some((s) => terms.some((term) => s.includes(term)));
+}
+
 export default function App() {
   const { user, checkingSession, logout } = useAuth();
 
@@ -278,9 +292,7 @@ export default function App() {
   /* ---------- discover: filtered/sorted list ---------- */
   let discoverList = [...users];
   if (activeTag) {
-    discoverList = discoverList.filter((u) =>
-      [...u.offers, ...u.wants].some((s) => s.toLowerCase().includes(activeTag.toLowerCase()))
-    );
+    discoverList = discoverList.filter((u) => matchesTag(u, activeTag));
   }
   if (search) {
     const q = search.toLowerCase();
