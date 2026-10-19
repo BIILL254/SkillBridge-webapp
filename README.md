@@ -14,6 +14,8 @@ Pick your terminal and run this single command against a running instance to get
 curl -H "Authorization: Bearer test-token" http://localhost:3001/api/experts
 ```
 
+> **Windows PowerShell:** `curl` is an alias for a different command there and shows a security prompt (or rejects `-H`). Type `curl.exe` instead of `curl` in every example in this README.
+
 > **Note:** The `Authorization: Bearer <token>` header is a Week 8 placeholder (real token authentication arrives in Week 9). Public downstream endpoints also accept open requests without the header:
 > ```bash
 > curl http://localhost:3001/api/experts
@@ -23,7 +25,9 @@ curl -H "Authorization: Bearer test-token" http://localhost:3001/api/experts
 
 ## How to Run the API Locally (Clean Clone from Zero)
 
-Follow these exact steps from a freshly cloned terminal:
+Follow these exact steps from a freshly cloned terminal.
+
+> **Requires Node.js 20 or 22 (LTS).** Node 24 currently fails at `npm install` with `No prebuilt binaries found` for `better-sqlite3` (it then tries to compile from source and asks for Visual Studio C++ tools). If you see that error, install Node 22 and run `npm install` again.
 
 ### 1. Clone the repository
 ```bash
@@ -95,18 +99,22 @@ npm run docs:build
   ```bash
   curl -X POST http://localhost:3001/api/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"username":"admin","password":"1234"}'
+    -d '{"username":"billamani","password":"1234"}'
   ```
-  Returns:
+  On Windows PowerShell (quotes inside JSON are stripped when passed to `curl.exe`), use this instead:
+  ```powershell
+  Invoke-RestMethod -Uri http://localhost:3001/api/auth/login -Method Post -ContentType "application/json" -Body '{"username":"billamani","password":"1234"}'
+  ```
+  Returns (the `token` is a different random string every time, so copy yours):
   ```json
   {
-    "token": "0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546",
-    "user": { "id": 15, "name": "Admin", "role": "admin" }
+    "token": "<your token: a long random string>",
+    "user": { "id": 1, "name": "Bill Amani", "username": "billamani", "role": "user", "mustChangePassword": true }
   }
   ```
-  Pass the returned token in subsequent requests:
+  Pass the returned token in subsequent requests, replacing `<token>` with your own:
   ```http
-  Authorization: Bearer 0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546
+  Authorization: Bearer <token>
   ```
 
 ---
@@ -311,7 +319,7 @@ Proxies upstream water station availability from Maji Website. (Requires logged-
 * **Request:**
   ```bash
   curl -s "http://localhost:3001/api/logistics/stations?estate=Kileleshwa" \
-    -H "Authorization: Bearer 0cbda866ab8a63e8db994fce7f5cec2727e3ffd0f35a47ec87bbb3500dc12546"
+    -H "Authorization: Bearer <token>"
   ```
 * **Real Response (`200 OK`):**
   ```json
