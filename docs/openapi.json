@@ -3,7 +3,7 @@
   "info": {
     "title": "SkillBridge API",
     "version": "1.0.0",
-    "description": "API contract for SkillBridge based on the Week 3 endpoint list. This API provides expert discovery, consultation booking, logistics integration with Maji Website, and delivery tracking.\n",
+    "description": "API contract for SkillBridge based on the Week 3 endpoint list. This API provides expert discovery, consultation booking, logistics integration with Maji Website, and delivery tracking.\n Every error response has the shape `{ \"error\": \"<message>\" }`. The /logistics endpoints require a bearer token from POST /auth/login.",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -23,6 +23,14 @@
   ],
   "tags": [
     {
+      "name": "Auth",
+      "description": "Log in or sign up to get a bearer token"
+    },
+    {
+      "name": "Health",
+      "description": "Server status"
+    },
+    {
       "name": "Experts",
       "description": "Verified expert discovery, profile lookup, availability slots, and reviews"
     },
@@ -40,6 +48,144 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Check the server is up",
+        "operationId": "getHealth",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Server is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Log in and receive a bearer token",
+        "operationId": "login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "description": "Wrong username or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts (10 per 15 minutes per IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Create an account and receive a bearer token",
+        "operationId": "signup",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "description": "Username already taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/experts": {
       "get": {
         "tags": [
@@ -278,13 +424,18 @@
         }
       }
     },
-    "/stations": {
+    "/logistics/stations": {
       "get": {
         "tags": [
           "Logistics"
         ],
-        "summary": "Return nearby Maji vendor stations",
+        "summary": "Return Maji vendor stations",
         "operationId": "getStations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "estate",
@@ -292,7 +443,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "Madaraka"
+            "example": "Westlands",
+            "description": "Case-insensitive part of an estate name"
           }
         ],
         "responses": {
@@ -301,81 +453,130 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Station"
-                  }
+                  "$ref": "#/components/schemas/StationList"
                 }
               }
             }
           },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
-    "/estates": {
+    "/logistics/estates": {
       "get": {
         "tags": [
           "Logistics"
         ],
-        "summary": "Return supported estates",
+        "summary": "Return estates Maji knows about",
         "operationId": "getEstates",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "deliveryStatus",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive"
+              ]
+            },
+            "example": "active"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Estates retrieved",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Estate"
-                  }
+                  "$ref": "#/components/schemas/EstateList"
                 }
               }
             }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
-    "/payment-methods": {
-      "get": {
+    "/logistics/estates/{estateId}/driver-interests": {
+      "post": {
         "tags": [
           "Logistics"
         ],
-        "summary": "Return available payment methods",
-        "operationId": "getPaymentMethods",
+        "summary": "Register a driver's interest in an estate",
+        "operationId": "registerDriverInterest",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Forwards to Maji Website. Not used by the SkillBridge UI today.",
+        "parameters": [
+          {
+            "name": "estateId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "est_1042"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DriverInterestRequest"
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "Payment methods retrieved",
+          "201": {
+            "description": "Interest registered",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PaymentMethod"
-                  }
+                  "$ref": "#/components/schemas/DriverInterest"
                 }
               }
             }
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
-    "/deliveries/{id}": {
+    "/logistics/deliveries/{id}": {
       "get": {
         "tags": [
           "Logistics"
         ],
-        "summary": "Track a delivery",
+        "summary": "Track a delivery (not supported by Maji)",
         "operationId": "getDelivery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Maji has no delivery tracking, so this always returns 501.",
         "parameters": [
           {
             "name": "id",
@@ -388,52 +589,48 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Delivery found",
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "501": {
+            "description": "Not implemented by Maji Website",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Delivery"
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           }
         }
       }
     },
-    "/deliveries": {
+    "/logistics/deliveries": {
       "post": {
         "tags": [
           "Logistics"
         ],
-        "summary": "Create a delivery order",
+        "summary": "Create a delivery order (not supported by Maji)",
         "operationId": "createDelivery",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeliveryRequest"
-              }
-            }
+        "security": [
+          {
+            "bearerAuth": []
           }
-        },
+        ],
+        "description": "Maji has no delivery API, so this always returns 501.",
         "responses": {
-          "201": {
-            "description": "Delivery created",
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "501": {
+            "description": "Not implemented by Maji Website",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Delivery"
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
           }
         }
       }
@@ -472,6 +669,16 @@
       },
       "BadRequest": {
         "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing, invalid or expired token",
         "content": {
           "application/json": {
             "schema": {
@@ -648,123 +855,193 @@
           }
         }
       },
-      "Station": {
+      "LoginRequest": {
         "type": "object",
         "required": [
-          "stationId",
-          "estate",
-          "operatingHours",
-          "stockLevel"
+          "username",
+          "password"
         ],
         "properties": {
-          "stationId": {
-            "type": "integer",
-            "example": 8
-          },
-          "estate": {
+          "username": {
             "type": "string",
-            "example": "Madaraka"
+            "example": "billamani"
           },
-          "operatingHours": {
+          "password": {
             "type": "string",
-            "example": "08:00-20:00"
-          },
-          "stockLevel": {
-            "type": "integer",
-            "example": 120
+            "example": "1234"
           }
         }
       },
-      "Estate": {
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "properties": {
-          "id": {
-            "type": "integer",
-            "example": 2
-          },
-          "name": {
-            "type": "string",
-            "example": "Madaraka"
-          }
-        }
-      },
-      "PaymentMethod": {
+      "SignupRequest": {
         "type": "object",
         "required": [
           "name",
-          "transactionFee",
-          "gatewayStatus"
+          "username",
+          "phone",
+          "password"
         ],
         "properties": {
           "name": {
             "type": "string",
-            "example": "M-Pesa Paybill"
+            "example": "Test User"
           },
-          "transactionFee": {
-            "type": "number",
-            "example": 20
-          },
-          "gatewayStatus": {
+          "username": {
             "type": "string",
-            "enum": [
-              "Online",
-              "Offline"
-            ],
-            "example": "Online"
-          }
-        }
-      },
-      "DeliveryRequest": {
-        "type": "object",
-        "required": [
-          "stationId",
-          "estateAddress",
-          "phone",
-          "paymentMethod"
-        ],
-        "properties": {
-          "stationId": {
-            "type": "integer",
-            "example": 8
-          },
-          "estateAddress": {
-            "type": "string",
-            "example": "Madaraka Estate, Nairobi"
+            "example": "testuser"
           },
           "phone": {
             "type": "string",
-            "example": "+254712345678"
+            "description": "07XXXXXXXX or 01XXXXXXXX",
+            "example": "0712345678"
           },
-          "paymentMethod": {
+          "password": {
             "type": "string",
-            "example": "M-Pesa Paybill"
+            "minLength": 4,
+            "example": "s3cret"
           }
         }
       },
-      "Delivery": {
+      "AuthResponse": {
         "type": "object",
         "required": [
-          "deliveryId",
-          "status",
-          "estimatedArrival"
+          "token",
+          "user"
         ],
         "properties": {
-          "deliveryId": {
-            "type": "integer",
-            "example": 101
+          "token": {
+            "type": "string"
+          },
+          "user": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "Source": {
+        "type": "string",
+        "enum": [
+          "mock",
+          "live"
+        ],
+        "description": "\"mock\" until MAJI_API_BASE_URL is configured",
+        "example": "mock"
+      },
+      "StationList": {
+        "type": "object",
+        "required": [
+          "source",
+          "stations"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "stations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "vendorId": {
+                  "type": "string",
+                  "example": "ven_211"
+                },
+                "stationName": {
+                  "type": "string",
+                  "example": "Westlands Pickup Station"
+                },
+                "targetEstateId": {
+                  "type": "string",
+                  "example": "est_1042"
+                }
+              }
+            }
+          }
+        }
+      },
+      "EstateList": {
+        "type": "object",
+        "required": [
+          "source",
+          "estates"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "estates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "est_1042"
+                },
+                "name": {
+                  "type": "string",
+                  "example": "Westlands, Nairobi"
+                },
+                "deliveryStatus": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "inactive"
+                  ],
+                  "example": "active"
+                }
+              }
+            }
+          }
+        }
+      },
+      "DriverInterestRequest": {
+        "type": "object",
+        "required": [
+          "userId"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "usr_5581"
+          },
+          "contactMethod": {
+            "type": "string",
+            "example": "phone"
+          }
+        }
+      },
+      "DriverInterest": {
+        "type": "object",
+        "required": [
+          "source",
+          "id",
+          "userId",
+          "estateId",
+          "status"
+        ],
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "id": {
+            "type": "string",
+            "example": "mock_di_1760000000000"
+          },
+          "userId": {
+            "type": "string",
+            "example": "usr_5581"
+          },
+          "estateId": {
+            "type": "string",
+            "example": "est_1042"
           },
           "status": {
             "type": "string",
-            "example": "Dispatched"
+            "example": "pending"
           },
-          "estimatedArrival": {
+          "createdAt": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-09-15T16:30:00Z"
+            "format": "date-time"
           }
         }
       }

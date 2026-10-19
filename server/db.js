@@ -326,7 +326,13 @@ function categorize(name) {
 // password on first login. New signups (via createUser below) skip this
 // flag since they chose their own password already.
 // ---------------------------------------------------------------------------
-const DEFAULT_PASSWORD = "1234";
+// Demo password for the seeded student accounts. Override with SEED_PASSWORD
+// when deploying publicly. The admin account has its own ADMIN_PASSWORD so it
+// can be locked down while the demo students stay easy to log into. Both fall
+// back to "1234" when unset, so local dev and the test suite are unchanged.
+const DEFAULT_PASSWORD = process.env.SEED_PASSWORD || "1234";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
+const ADMIN_PASSWORD_IS_CUSTOM = Boolean(process.env.ADMIN_PASSWORD);
 const ADMIN_USERNAME = "admin";
 
 function generateUniqueUsername(name, excludeUserId = null) {
@@ -370,11 +376,13 @@ function generateInitials(name) {
 
   const adminExists = db.prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1").get();
   if (!adminExists) {
-    const adminHash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
+    const adminHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+    // A password chosen via ADMIN_PASSWORD is already a real one, so don't
+    // force a change on first login; the default "1234" still does.
     const result = db.prepare(`
       INSERT INTO users (name, dept, initials, online, rating, reviews, swaps, estate, username, phone, password_hash, role, must_change_password)
-      VALUES (?, ?, ?, 1, 0, 0, 0, ?, ?, ?, ?, 'admin', 1)
-    `).run("Admin", "Administration", "AD", "Nairobi", ADMIN_USERNAME, "0700000000", adminHash);
+      VALUES (?, ?, ?, 1, 0, 0, 0, ?, ?, ?, ?, 'admin', ?)
+    `).run("Admin", "Administration", "AD", "Nairobi", ADMIN_USERNAME, "0700000000", adminHash, ADMIN_PASSWORD_IS_CUSTOM ? 0 : 1);
     db.prepare("INSERT INTO profiles (user_id, coins) VALUES (?, 0)").run(result.lastInsertRowid);
   }
 }
