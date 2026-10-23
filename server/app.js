@@ -51,8 +51,19 @@ app.use("/api/admin", adminRouter);
 app.use("/api/experts", expertsRouter);
 app.use("/api/skills", skillsRouter);
 
+// Root route aliases for AgroConnect: allows calling both /api/experts and /experts
+// directly as documented in ENDPOINT_LIST.md
+app.use("/experts", expertsRouter);
+app.use("/skills", skillsRouter);
+app.use("/requests", requestsRouter);
+
 // Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
 app.use("/api/logistics", logisticsRouter);
+
+// Direct interactive testing UI for AgroConnect and consumers
+app.get(["/swagger", "/test"], (req, res) => {
+  res.sendFile(path.join(docsPath, "swagger.html"));
+});
 
 // Documentation site and OpenAPI spec
 app.use("/docs", express.static(docsPath));

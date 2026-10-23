@@ -13,6 +13,7 @@
     "server:dev": "nodemon server/server.js",
     "db:reset": "node server/reset-db.js",
     "docs:build": "npx -y @redocly/cli build-docs openapi.yaml -o docs/index.html && npx -y @redocly/cli bundle openapi.yaml -o docs/openapi.json && node scripts/build-docs.js",
+    "tunnel": "npx -y localtunnel --port 3001",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {

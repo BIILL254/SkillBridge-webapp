@@ -29,8 +29,17 @@ if (fs.existsSync(openapiJsonPath)) {
   <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
     window.onload = function() {
+      const spec = ${JSON.stringify(spec)};
+      const origin = (window.location.origin && window.location.origin !== "null" && !window.location.origin.startsWith("file:"))
+        ? window.location.origin
+        : "http://localhost:3001";
+      spec.servers = [
+        { url: origin + "/api", description: "Current active server (" + origin + ")" },
+        { url: origin, description: "Root base URL without /api" },
+        { url: "http://localhost:3001/api", description: "Localhost fallback" }
+      ];
       window.ui = SwaggerUIBundle({
-        spec: ${JSON.stringify(spec)},
+        spec: spec,
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [

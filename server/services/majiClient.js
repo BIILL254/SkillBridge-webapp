@@ -36,8 +36,8 @@
 // returns mock data — but now shaped to match Maji's REAL schema, not our
 // earlier guess, so switching to live mode later is a clean swap.
 
-const BASE_URL = process.env.MAJI_API_BASE_URL;
-const API_KEY = process.env.MAJI_API_KEY;
+const getBaseUrl = () => (process.env.MAJI_API_BASE_URL || "").trim().replace(/\/+$/, "");
+const getApiKey = () => (process.env.MAJI_API_KEY || "").trim();
 
 let warnedOnce = false;
 function warnMockMode() {
@@ -51,21 +51,44 @@ function warnMockMode() {
 }
 
 async function callMaji(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {}),
-      ...options.headers,
-    },
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const err = new Error(body.error || `Maji Website request failed (${res.status})`);
-    err.status = 502; // bad gateway — the failure is upstream, not ours
-    throw err;
+  const baseUrl = getBaseUrl();
+  const apiKey = getApiKey();
+  if (!baseUrl) {
+    throw Object.assign(new Error("MAJI_API_BASE_URL is not set"), { status: 502 });
   }
-  return res.json();
+
+  const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}`, "X-API-Key": apiKey } : {}),
+        ...options.headers,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const msg = body.error || body.message || `Maji Website request failed (${res.status})`;
+      const err = new Error(msg);
+      err.status = res.status >= 500 ? 502 : res.status;
+      err.upstreamStatus = res.status;
+      throw err;
+    }
+    return res.json();
+  } catch (err) {
+    const causeCode = err.cause?.code || err.code || "";
+    console.error(`[majiClient] Call to ${path} failed:`, causeCode || err.message);
+
+    if (err.status && err.upstreamStatus) throw err;
+
+    const netErr = new Error(`Maji Website service unavailable: ${causeCode || err.message}`);
+    netErr.status = 502;
+    netErr.code = causeCode;
+    throw netErr;
+  }
 }
 
 // ---- Mock data, shaped exactly like Maji's real contract ----
@@ -83,25 +106,51 @@ const MOCK_STATIONS = [
   { vendorId: "ven_211", stationName: "Westlands Pickup Station", targetEstateId: "est_1042" },
 ];
 
-// GET /estates?deliveryStatus={active|inactive}
+function normalizeEstates(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  return rawList.map((item, idx) => {
+    if (typeof item === "string") {
+      return { id: `est_${idx + 1}`, name: item, deliveryStatus: "active" };
+    }
+    const name = item.name || item.estate || `Estate ${idx + 1}`;
+    const id = item.id ? String(item.id) : `est_${idx + 1}`;
+    const deliveryStatus = item.deliveryStatus || "active";
+    return { id, name, deliveryStatus };
+  });
+}
+
+// GET estates from Maji Website
+// Accommodates both their deployed /api/orders/active/estates endpoint
+// and their Week 4 OpenAPI contract (/estates?deliveryStatus={active|inactive})
 export async function getEstates(deliveryStatus) {
-  if (!BASE_URL) {
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
     warnMockMode();
     const filtered = deliveryStatus ? MOCK_ESTATES.filter((e) => e.deliveryStatus === deliveryStatus) : MOCK_ESTATES;
     return { source: "mock", estates: filtered };
   }
-  const estates = await callMaji(`/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`);
-  return { source: "live", estates };
+
+  let rawData;
+  try {
+    rawData = await callMaji("/api/orders/active/estates");
+  } catch (err) {
+    if (err.upstreamStatus === 404) {
+      rawData = await callMaji(`/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`);
+    } else {
+      throw err;
+    }
+  }
+
+  const normalized = normalizeEstates(rawData);
+  const filtered = deliveryStatus ? normalized.filter((e) => e.deliveryStatus === deliveryStatus) : normalized;
+  return { source: "live", estates: filtered };
 }
 
 // GET /vendors/stations
-//
-// No estate filter exists on this endpoint in Maji's real contract, so
-// "filter by estate" has to happen on OUR side: fetch the estates, find
-// the matching id, then filter stations by targetEstateId. This does
-// mean an extra round trip compared to what was originally assumed.
+// Filters stations by estate on our side, and gracefully handles if partner hasn't deployed this route yet
 export async function getStations(estateName) {
-  if (!BASE_URL) {
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
     warnMockMode();
     let stations = MOCK_STATIONS;
     if (estateName) {
@@ -111,7 +160,21 @@ export async function getStations(estateName) {
     return { source: "mock", stations };
   }
 
-  const allStations = await callMaji("/vendors/stations");
+  let allStations = [];
+  try {
+    allStations = await callMaji("/vendors/stations");
+  } catch (err) {
+    if (err.upstreamStatus === 404) {
+      console.warn("[majiClient] /vendors/stations returned 404 on Maji Website. Handled gracefully.");
+      return {
+        source: "live",
+        stations: [],
+        notice: "Partner (Maji Website) has not yet deployed the /vendors/stations endpoint.",
+      };
+    }
+    throw err;
+  }
+
   if (!estateName) return { source: "live", stations: allStations };
 
   const { estates } = await getEstates();
@@ -128,7 +191,8 @@ export async function getStations(estateName) {
 // documented and callable if a real use for it turns up later; nothing
 // in the app currently calls this.
 export async function getCustomerPaymentMethod(customerId) {
-  if (!BASE_URL) {
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
     warnMockMode();
     return { source: "mock", customerId, paymentMethod: "mpesa" };
   }
@@ -143,7 +207,8 @@ export async function getCustomerPaymentMethod(customerId) {
 // student signing up to help deliver water for group sessions) wants it.
 export async function registerDriverInterest(estateId, { userId, contactMethod } = {}) {
   if (!userId) throw Object.assign(new Error("userId is required"), { status: 400 });
-  if (!BASE_URL) {
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
     warnMockMode();
     return {
       source: "mock",

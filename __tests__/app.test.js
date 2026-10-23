@@ -23,4 +23,16 @@ describe("unknown routes and malformed input", () => {
     expect(res.status).toBe(400);
     expect(typeof res.body.error).toBe("string");
   });
+
+  it("serves Swagger UI at /swagger for consumer testing", async () => {
+    const res = await request(app).get("/swagger");
+    expect(res.status).toBe(200);
+    expect(res.text).toContain("SwaggerUIBundle");
+  });
+
+  it("supports root downstream alias /experts directly", async () => {
+    const res = await request(app).get("/experts");
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
 });

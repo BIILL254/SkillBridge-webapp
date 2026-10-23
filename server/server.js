@@ -14,6 +14,8 @@ const PORT = process.env.PORT || 3001;
 
 const server = app.listen(PORT, () => {
   console.log(`SkillBridge API running at http://localhost:${PORT}`);
+  console.log(`AgroConnect Consumer Testing (Swagger UI): http://localhost:${PORT}/swagger`);
+  console.log(`API Documentation (Redoc): http://localhost:${PORT}/docs`);
 });
 
 server.on("error", (err) => {
