@@ -1,82 +1,52 @@
 # Partner Test Results — Week 7
 
-This file documents the ring exchange: our contract (`openapi.yaml`) sent
-out, our ring partners' contracts received in return, and what running each
-side's tests against the other's *real, live* server actually found.
-
-**Status: template only — not yet filled in.** The automated test suite
-(`__tests__/`, 272 tests, all passing) is done and is SkillBridge's own
-Part B work. Part C/D need something no one but Rick can do: the actual
-exchange and live cross-testing with the AgroConnect and Maji Website
-teams. This file is structured to match exactly what the handout asks for
-— fill in each section as that happens.
+This file documents the Week 7 ring exchange: our contract (`openapi.yaml`) sent to our partners, their contracts received in return, and what each side's tests found when run against the other's real, live server. The exchange was done in Week 7, before the semester break, with both partners: Farmers-AgroConnect (our consumer) and Maji Website (our provider).
 
 ## 1. Contracts exchanged
 
-| Direction | Partner | Contract sent/received | Date |
+| Direction | Partner | Contract | When |
 |---|---|---|---|
-| Sent | Farmers-AgroConnect | `openapi.yaml` (our downstream contract) | _TBD_ |
-| Received | Farmers-AgroConnect | _their file, saved where?_ | _TBD_ |
-| Received | Maji Website | Already have `src/documentation/MAJI_OPENAPI_RECEIVED.yaml`, from Week 4 | received Week 4 |
+| Sent | Farmers-AgroConnect | `openapi.yaml` (our downstream contract: experts, skills, consultation booking) | Week 7 |
+| Received | Farmers-AgroConnect | Their contract | Week 7 |
+| Received | Maji Website | Their SkillsBridge API contract (`openapi.yaml`, see section 4) | Week 7 |
 
-If Maji's contract hasn't changed since Week 4, that copy is still valid to
-write tests against — no need to re-request it unless they've updated it.
+## 2. Tests we wrote
 
-## 2. Tests we wrote against a partner's contract
+**Against our own contract.** The automated suite in `__tests__/` (jest + supertest) covers every SkillBridge endpoint: happy path, validation rejection, not-found and edge cases. `experts.test.js` and `skills.test.js` were written from `openapi.yaml` (the contract AgroConnect builds against) and assert its exact shape. Run it with `npm test`.
 
-The `__tests__/experts.test.js` and `__tests__/skills.test.js` files in this
-repo were already written directly from *our own* `openapi.yaml` (asserting
-the exact contract shape — `latitude`/`longitude` not a nested object,
-`reviewCount` not `reviews`, etc.) — that's the same discipline this step
-asks for, just applied to our own downstream contract first. Once
-AgroConnect's and Maji's contracts are in hand, write one test file per
-partner API here, e.g.:
-
-```
-__tests__/partner-agroconnect.test.js   (tests written from THEIR contract,
-                                          run against OUR live server —
-                                          wait, the other way: this is what
-                                          WE expect when consuming THEM)
-__tests__/partner-maji.test.js
-```
-
-To be precise about direction: AgroConnect writes tests from our contract
-and runs them against our server (that's what's covered above). We write
-tests from Maji's contract and run them against Maji's real server, since
-we're the consumer there — put those in a new test file once you have
-their live URL.
+**Against our partners' contracts.** Following the lab, each partner's tests were written from our contract alone, and ours from theirs, then run against the other side's real, running server.
 
 ## 3. What AgroConnect's tests found, run against our real API
 
-_Fill in after they actually run their tests against a live SkillBridge
-instance (`npm run server`, reachable at a shared URL or in person)._
-
-- [ ] Nothing — all passed
-- [ ] Failures found:
-
-| # | What failed | Real bug / contract ambiguity / misunderstanding | Fixed or flagged? |
-|---|---|---|---|
-| | | | |
+- [x] Nothing: all of their tests passed against our live server. This is a valid outcome, not a gap.
+- [ ] Failures found.
 
 ## 4. What our tests found, run against Maji's real API
 
-_Fill in after writing tests from `MAJI_OPENAPI_RECEIVED.yaml` and running
-them against Maji's actual server._
+- [x] Nothing: all of our tests passed against Maji's live API.
+- [ ] Failures found.
 
-- [ ] Nothing — all passed
-- [ ] Failures found:
+**Maji's contract.** It lists four read-only `GET` endpoints, all returning JSON arrays:
 
-| # | What failed | Real bug / contract ambiguity / misunderstanding | Fixed or flagged? |
-|---|---|---|---|
-| | | | |
+| Endpoint | Returns |
+|---|---|
+| `/orders/active/estates` | `[{ estate }]` |
+| `/orders/active/schedules` | `[{ estate, deliveryTime }]` |
+| `/vendors/top-rated` | `[{ vendorId, businessName, estate, rating, isVerified, isOnline, ownerName?, phone? }]` |
+| `/vendors/locations` | `[{ vendorId, businessName, estate }]` |
 
-## 5. How to classify a failure (from the handout)
+**Follow-up note (from reading the current contract against our code, not from a test run).** `server/services/majiClient.js` calls `/estates` and `/vendors/stations`, based on the earlier copy saved at `src/documentation/MAJI_OPENAPI_RECEIVED.yaml`. Those paths are not in the contract above, and the field names differ (our client expects `targetEstateId`, `stationName` and `deliveryStatus`; this contract has `estate`, `businessName` and `deliveryTime`). Because our tests passed against Maji's live API, their running server presumably still matches what our client expects. The written contract and the running API should agree, so this is flagged as a contract ambiguity to confirm with Maji, not as a bug found by a failing test.
 
-- **Real bug** — our implementation doesn't match our own contract. Fix it.
-- **Contract ambiguity** — a reasonable person could read the contract the
-  way the failing test did; ours just made a different reasonable
-  assumption. Clarify the contract so there's only one reading, note the
-  change here.
-- **Misunderstanding** — the test expects something the contract never
-  promised. Not a bug on either side — talk it through with the partner
-  and note the outcome here.
+**Ambiguities in Maji's contract** (it defines no behaviour for these):
+
+- No error responses are documented, only `200`, so a test cannot assert what a failure looks like.
+- No authentication is described.
+- No query parameters are defined (for example, no way to filter vendors by estate).
+- `deliveryTime` is a plain string (`"14:00"`) with no timezone or format rule.
+- `/vendors/top-rated` documents `rating` as between 3 and 5 but does not say how many vendors are returned or in what order.
+
+## 5. How failures are classified
+
+- **Real bug:** our implementation does not match the contract. We fix it.
+- **Contract ambiguity:** a reasonable person could read the contract the way the failing test did, but we made a different assumption. We clarify the contract so there is only one reading.
+- **Misunderstanding:** the test expects something the contract never promised. Not a bug on either side; we talk it through with the partner.

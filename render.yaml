@@ -1,0 +1,40 @@
+# Render Blueprint for SkillBridge: one free backend (Express + SQLite) and one
+# free static frontend (Vite + React). Put this file in the ROOT of the repo.
+#
+# Render prompts for every variable marked `sync: false` when you create the
+# Blueprint, so no secrets are stored in this file.
+
+services:
+  # ---- Backend API -------------------------------------------------------
+  - type: web
+    name: skillbridge-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    envVars:
+      # better-sqlite3 has prebuilt binaries for Node 20/22, not Node 24.
+      - key: NODE_VERSION
+        value: "22"
+      # Password for the seeded "admin" account. Pick a long random one.
+      - key: ADMIN_PASSWORD
+        sync: false
+      # The frontend's address, e.g. https://skillbridge-web.onrender.com
+      # (no trailing slash). Lets only your site call the API from a browser.
+      - key: ALLOWED_ORIGIN
+        sync: false
+
+  # ---- Frontend ----------------------------------------------------------
+  - type: web
+    name: skillbridge-web
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # The backend's address ending in /api, e.g.
+      # https://skillbridge-api.onrender.com/api (baked in at build time).
+      - key: VITE_API_URL
+        sync: false

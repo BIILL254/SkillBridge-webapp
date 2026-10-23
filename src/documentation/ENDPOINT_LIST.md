@@ -110,3 +110,16 @@ We went through the peer review feedback and made the following updates and desi
 | `GET` | `/payment-methods` | Return available payment methods, transaction fee structures, and gateway status. | "SkillBridge needs to read supported payment methods (e.g., M-Pesa paybill, cash on delivery, mobile wallet), transaction fee structures, and gateway statuses from Maji Website in order to dynamically render payment options in our group session checkout modal." |
 | `GET` | `/deliveries/{id}` | Return real-time delivery status, courier dispatch updates, and estimated arrival time. | "SkillBridge needs to read real-time order delivery status, courier dispatch updates, and estimated arrival times from Maji Website in order to render a live logistics progress bar on the host student's upcoming session dashboard." |
 | `POST` | `/deliveries` | Create a new water delivery order with station ID, destination address, contact phone, and payment method. | "SkillBridge needs to create water delivery orders containing selected vendor station ID, destination estate address, contact phone number, and chosen payment method on Maji Website in order to automatically dispatch water supplies for scheduled peer learning workshops." |
+| `GET` | `/orders/active/schedule` | Return the delivery schedules for active orders, giving the delivery time by estate. | "SkillBridge needs to read active delivery schedules (delivery time by estate) from Maji Website in order to show students when water deliveries are due in an estate before they schedule a physical group session there." |
+| `GET` | `/vendors/top-rated` | Return top-rated vendors with their rating and availability information (for example verified and online status). | "SkillBridge needs to read top-rated vendor information, including vendor rating and availability, from Maji Website in order to recommend reliable vendors as meetup points for students' physical group sessions." |
+
+---
+
+## Part F — Additions After Maji's Revised Contract
+
+Maji later published a revised contract for SkillBridge's integration. Two endpoints from it were added to the final upstream list in Part E:
+
+- `GET /orders/active/schedule`: active delivery schedules, so SkillBridge can read delivery timing by estate.
+- `GET /vendors/top-rated`: vendor information, including rating and availability.
+
+Both are `GET` reads with no query parameters, so they follow the same REST conventions as the rest of the list (noun paths, verb carried by the method, no caller-specific flags). Parts B to D above are left as they were, because they record the draft, the review and the revisions at the time.
