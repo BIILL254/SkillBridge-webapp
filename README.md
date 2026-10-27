@@ -8,18 +8,17 @@ Built with **React 18**, **Express 4**, and **SQLite (better-sqlite3)**.
 
 ## Quickstart — Make a Real API Call in 10 Seconds
 
-Pick your terminal and run this single command against a running instance to get a real JSON response immediately:
+Every request needs an API key in an `X-API-Key` header (see [Authentication](#authentication-and-rate-limiting)). With the API running and your key in hand, this one command returns real JSON:
 
 ```bash
-curl -H "Authorization: Bearer test-token" http://localhost:3001/api/experts
+curl -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts
 ```
 
-> **Windows PowerShell:** `curl` is an alias for a different command there and shows a security prompt (or rejects `-H`). Type `curl.exe` instead of `curl` in every example in this README.
+* **Ring partners (Farmers-AgroConnect):** your key is sent to you privately. Replace `<your-api-key>` with it.
+* **Running it yourself:** you create your own key in step 3 below.
+* **No key, or a wrong one:** you get `401` (see [Error Format Reference](#error-format-reference)).
 
-> **Note:** The `Authorization: Bearer <token>` header is a Week 8 placeholder (real token authentication arrives in Week 9). Public downstream endpoints also accept open requests without the header:
-> ```bash
-> curl http://localhost:3001/api/experts
-> ```
+> **Windows PowerShell:** `curl` is an alias for a different command there and shows a security prompt (or rejects `-H`). Type `curl.exe` instead of `curl` in every example in this README.
 
 ---
 
@@ -40,7 +39,30 @@ cd SkillBridge-webapp
 npm install
 ```
 
-### 3. Start the API server
+### 3. Create your API keys and `.env` file
+The API refuses every request that has no valid key, and keys live in a `.env` file that is **never committed** (it is listed in `.gitignore`). Copy the template, then fill it in:
+
+```bash
+cp .env.example .env
+```
+(Windows PowerShell: `Copy-Item .env.example .env`)
+
+Generate a random key for each consumer, running this once per key:
+```bash
+node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+```
+
+Put them in `.env` (the values below are placeholders, not real keys):
+```text
+API_KEYS=agroconnect:<key-1>,team:<key-2>
+WEB_API_KEY=<key-3>
+VITE_API_KEY=<same value as WEB_API_KEY>
+```
+* `API_KEYS` holds one key per outside consumer, written `name:key` and separated by commas. Give each partner their own key, privately.
+* `WEB_API_KEY` is the key our own React app sends; `VITE_API_KEY` must hold the same value so the frontend can read it.
+* If `API_KEYS` and `WEB_API_KEY` are both empty, the API rejects every request.
+
+### 4. Start the API server
 Run any of the following standard commands (they all work):
 ```bash
 npm start
@@ -58,7 +80,7 @@ SkillBridge API running at http://localhost:3001
   npm run db:reset
   ```
 
-### 4. (Optional) Start the frontend
+### 5. (Optional) Start the frontend
 Open a second terminal window:
 ```bash
 npm run dev
@@ -73,7 +95,7 @@ npm run dev
 This repository provides rendered browsable API documentation directly from `openapi.yaml`:
 
 1. **Standalone Redoc Documentation:** Open [`docs/index.html`](docs/index.html) directly in any browser (no server needed — double-click the file or open via `file://`).
-2. **Interactive Swagger UI ("Try It Out"):** Open [`docs/swagger.html`](docs/swagger.html) in your browser for an interactive testing sandbox.
+2. **Interactive Swagger UI ("Try It Out"):** Open [`docs/swagger.html`](docs/swagger.html) in your browser for an interactive testing sandbox. Click **Authorize** and paste your API key first, or every "Try it out" call returns 401.
 3. **Live Server Documentation:** When the Express server is running, navigate directly to:
    * Redoc Documentation: [http://localhost:3001/docs](http://localhost:3001/docs)
    * Raw OpenAPI Spec: [http://localhost:3001/openapi.yaml](http://localhost:3001/openapi.yaml)
@@ -85,50 +107,86 @@ npm run docs:build
 
 ---
 
-## Authentication Instructions
+## Authentication and Rate Limiting
 
-* **Downstream Partner Endpoints (`/api/experts`, `/api/skills`, `/api/requests`):**
-  These endpoints serve our downstream partner **Farmers-AgroConnect**. In accordance with Week 8 lab specifications, authentication uses an open placeholder. Pass:
-  ```http
-  Authorization: Bearer <token>
-  ```
-  Where `<token>` can be any placeholder string (e.g., `test-token` or `agri-bearer-123`). Requests without the header are also accepted. Full OAuth/JWT arrives in Week 9.
+SkillBridge checks two different things, and they answer different questions:
 
-* **Internal Student & Logistics Proxy Endpoints (`/api/logistics`, `/api/profile`, `/api/admin`):**
-  Protected endpoints require a session token generated via login:
-  ```bash
-  curl -X POST http://localhost:3001/api/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"username":"billamani","password":"1234"}'
-  ```
-  On Windows PowerShell (quotes inside JSON are stripped when passed to `curl.exe`), use this instead:
-  ```powershell
-  Invoke-RestMethod -Uri http://localhost:3001/api/auth/login -Method Post -ContentType "application/json" -Body '{"username":"billamani","password":"1234"}'
-  ```
-  Returns (the `token` is a different random string every time, so copy yours):
-  ```json
-  {
-    "token": "<your token: a long random string>",
-    "user": { "id": 1, "name": "Bill Amani", "username": "billamani", "role": "user", "mustChangePassword": true }
-  }
-  ```
-  Pass the returned token in subsequent requests, replacing `<token>` with your own:
-  ```http
-  Authorization: Bearer <token>
-  ```
+| Layer | Header | Says | Needed for |
+| :--- | :--- | :--- | :--- |
+| **API key** | `X-API-Key: <your-api-key>` | *Which application* is calling | **Every** endpoint below, no exceptions |
+| **Login token** | `Authorization: Bearer <token>` | *Which student* is acting | Endpoints about a person (`/api/profile`, `/api/sessions`, `/api/admin`, `/api/logistics`, most of `/api/requests`) |
+
+Only these are open without a key: `GET /api/health`, and the published documentation pages (`/docs`, `/api-docs`, `/openapi.yaml`). They return no data.
+
+### A valid request
+```bash
+curl -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts
+```
+PowerShell:
+```powershell
+Invoke-RestMethod -Uri http://localhost:3001/api/experts -Headers @{ "X-API-Key" = "<your-api-key>" }
+```
+Always use the placeholder `<your-api-key>` in anything you share; never paste a real key into a README, chat channel, or repository.
+
+### Getting a login token (for the student endpoints)
+The login call needs the API key too:
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "X-API-Key: <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"billamani","password":"1234"}'
+```
+On Windows PowerShell (quotes inside JSON are stripped when passed to `curl.exe`), use this instead:
+```powershell
+Invoke-RestMethod -Uri http://localhost:3001/api/auth/login -Method Post -Headers @{ "X-API-Key" = "<your-api-key>" } -ContentType "application/json" -Body '{"username":"billamani","password":"1234"}'
+```
+Returns (the `token` is a different random string every time, so copy yours):
+```json
+{
+  "token": "<your token: a long random string>",
+  "user": { "id": 1, "name": "Bill Amani", "username": "billamani", "role": "user", "mustChangePassword": true }
+}
+```
+Send both headers on later calls, replacing `<token>` with your own:
+```http
+X-API-Key: <your-api-key>
+Authorization: Bearer <token>
+```
+
+### What a 401 looks like (missing or wrong key)
+```http
+HTTP/1.1 401 Unauthorized
+Content-Type: application/json
+```
+```json
+{ "error": "Missing or invalid API key" }
+```
+A wrong key and a missing key get the same answer on purpose. The request never reaches the endpoint. (A valid key with a missing or expired login token on a student endpoint also returns `401`, with `{"error": "Not logged in"}`.)
+
+### Rate limit
+Each key may make **100 requests per minute**. Going over returns `429`, and the counter resets when the minute ends:
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 37
+Content-Type: application/json
+```
+```json
+{ "error": "Too many requests", "retryAfter": 37 }
+```
+`Retry-After` (and `retryAfter`) is the number of seconds to wait before trying again. Every response also carries `X-RateLimit-Limit` and `X-RateLimit-Remaining` so you can slow down before hitting the limit. Our own web app is counted per visitor address instead of per key, at 300 requests per minute. Limits can be changed with `RATE_LIMIT_MAX`, `RATE_LIMIT_WEB_MAX` and `RATE_LIMIT_WINDOW_MS` (see `.env.example`).
 
 ---
 
 ## Working Examples per Major Endpoint
 
-Every example below includes the real copy-paste request and the real JSON response returned by the live server.
+Every example below includes the real copy-paste request and the real JSON response returned by the live server. Replace `<your-api-key>` with your own key (and `<token>` with your own login token where shown).
 
 ### 1. List Verified Experts (Filter & Sort)
 Returns a list of verified mentors. Supports filtering by `estate` and sorting by `rating` or `proximity`.
 
 * **Request:**
   ```bash
-  curl -s "http://localhost:3001/api/experts?estate=Westlands"
+  curl -s -H "X-API-Key: <your-api-key>" "http://localhost:3001/api/experts?estate=Westlands"
   ```
 * **Real Response (`200 OK`):**
   ```json
@@ -157,7 +215,7 @@ Returns detailed profile attributes for a specific expert.
 
 * **Request:**
   ```bash
-  curl -s http://localhost:3001/api/experts/13
+  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13
   ```
 * **Real Response (`200 OK`):**
   ```json
@@ -173,7 +231,8 @@ Returns detailed profile attributes for a specific expert.
       "Agronomy",
       "Crop Disease Management",
       "Irrigation Systems",
-      "Soil Health"
+      "Soil Health",
+      "Water Treatment"
     ]
   }
   ```
@@ -185,7 +244,7 @@ Returns upcoming available time slots for scheduling a consultation.
 
 * **Request:**
   ```bash
-  curl -s http://localhost:3001/api/experts/13/availability
+  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13/availability
   ```
 * **Real Response (`200 OK`):**
   ```json
@@ -215,7 +274,7 @@ Returns aggregate ratings, review count, and total completed sessions for an exp
 
 * **Request:**
   ```bash
-  curl -s http://localhost:3001/api/experts/13/reviews
+  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13/reviews
   ```
 * **Real Response (`200 OK`):**
   ```json
@@ -233,49 +292,49 @@ Returns categorized skills available on the platform, filterable by `tag`.
 
 * **Request:**
   ```bash
-  curl -s "http://localhost:3001/api/skills?tag=Agriculture"
+  curl -s -H "X-API-Key: <your-api-key>" "http://localhost:3001/api/skills?tag=Agriculture"
   ```
 * **Real Response (`200 OK`):**
   ```json
   [
     {
-      "id": 68,
+      "id": 71,
       "name": "Agronomy",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 71,
+      "id": 74,
       "name": "Crop Disease Management",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 75,
+      "id": 79,
       "name": "Farm Tech",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 70,
+      "id": 73,
       "name": "Irrigation Systems",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 76,
+      "id": 80,
       "name": "Livestock Management",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 77,
+      "id": 81,
       "name": "Organic Farming",
       "category": "Agriculture",
       "offeredBy": 1
     },
     {
-      "id": 69,
+      "id": 72,
       "name": "Soil Health",
       "category": "Agriculture",
       "offeredBy": 1
@@ -291,6 +350,7 @@ Allows a farmer to submit a consultation booking request for a verified expert.
 * **Request (Bash / Linux / macOS):**
   ```bash
   curl -s -X POST http://localhost:3001/api/requests \
+    -H "X-API-Key: <your-api-key>" \
     -H "Content-Type: application/json" \
     -d '{
       "farmerName": "John Kamau",
@@ -301,12 +361,12 @@ Allows a farmer to submit a consultation booking request for a verified expert.
   ```
 * **Request (Windows PowerShell):**
   ```powershell
-  Invoke-RestMethod -Uri http://localhost:3001/api/requests -Method Post -ContentType "application/json" -Body '{"farmerName":"John Kamau","topic":"Irrigation Systems","expertId":13,"date":"2026-10-15T10:00:00Z"}'
+  Invoke-RestMethod -Uri http://localhost:3001/api/requests -Method Post -Headers @{ "X-API-Key" = "<your-api-key>" } -ContentType "application/json" -Body '{"farmerName":"John Kamau","topic":"Irrigation Systems","expertId":13,"date":"2026-10-15T10:00:00Z"}'
   ```
 * **Real Response (`201 Created`):**
   ```json
   {
-    "requestId": 5,
+    "requestId": 4,
     "status": "Pending"
   }
   ```
@@ -319,6 +379,7 @@ Proxies upstream water station availability from Maji Website. (Requires logged-
 * **Request:**
   ```bash
   curl -s "http://localhost:3001/api/logistics/stations?estate=Kileleshwa" \
+    -H "X-API-Key: <your-api-key>" \
     -H "Authorization: Bearer <token>"
   ```
 * **Real Response (`200 OK`):**
@@ -327,9 +388,9 @@ Proxies upstream water station availability from Maji Website. (Requires logged-
     "source": "mock",
     "stations": [
       {
-        "vendorId": "vnd_kileleshwa_1",
-        "stationName": "Kileleshwa Water Hub",
-        "targetEstateId": "est_kileleshwa"
+        "vendorId": "ven_201",
+        "stationName": "Kileleshwa Vendor Point",
+        "targetEstateId": "est_1029"
       }
     ]
   }
@@ -381,13 +442,42 @@ All API errors return a consistent, unambiguous JSON payload with an `"error"` d
   }
   ```
 
-### 5. Missing Authentication on Protected Routes (`401 Unauthorized`)
-* **Trigger:** Calling `/api/logistics/stations` without an `Authorization: Bearer <token>` header.
-* **Request:** `GET /api/logistics/stations`
+### 5. Missing or Wrong API Key (`401 Unauthorized`)
+* **Trigger:** Any request with no `X-API-Key` header, or a key the server does not know.
+* **Request:** `GET /api/experts` (no key)
+* **Response (`401 Unauthorized`):**
+  ```json
+  {
+    "error": "Missing or invalid API key"
+  }
+  ```
+
+### 6. Missing Login on Student Routes (`401 Unauthorized`)
+* **Trigger:** A valid API key, but calling `/api/logistics/stations` without an `Authorization: Bearer <token>` header.
+* **Request:** `GET /api/logistics/stations` with only `X-API-Key`
 * **Response (`401 Unauthorized`):**
   ```json
   {
     "error": "Not logged in"
+  }
+  ```
+
+### 7. Rate Limit Exceeded (`429 Too Many Requests`)
+* **Trigger:** More than 100 requests from one key inside one minute.
+* **Response (`429 Too Many Requests`)** with header `Retry-After: <seconds>`:
+  ```json
+  {
+    "error": "Too many requests",
+    "retryAfter": 37
+  }
+  ```
+
+### 8. Unexpected Server Error (`500 Internal Server Error`)
+* **Trigger:** A bug or a database failure on our side. The details are logged on the server and never sent to you.
+* **Response (`500 Internal Server Error`):**
+  ```json
+  {
+    "error": "Something went wrong"
   }
   ```
 
@@ -408,7 +498,7 @@ All seeded accounts share the default password `1234` and are prompted to set a 
 
 ## Automated Test Suite
 
-SkillBridge includes 272 automated tests across 10 test suites covering route validation, error status codes, authentication, SQLite migrations, and upstream contract mocking.
+SkillBridge includes 342 automated tests across 13 test suites covering route validation, error status codes, authentication, API key enforcement (401 / 200), rate limiting (429), the security audit regressions, SQLite migrations, and upstream contract mocking.
 
 Run the entire test suite:
 ```bash
@@ -417,10 +507,10 @@ npm test
 
 Expected output:
 ```text
-Test Suites: 10 passed, 10 total
-Tests:       272 passed, 272 total
+Test Suites: 13 passed, 13 total
+Tests:       342 passed, 342 total
 Snapshots:   0 total
-Time:        4.415 s
+Time:        16 s
 Ran all test suites.
 ```
 
@@ -434,8 +524,9 @@ Ran all test suites.
 | **Backend** | Node.js + Express 4 |
 | **Database** | SQLite via `better-sqlite3` (zero-config, local file `skillbridge.db`) |
 | **Documentation** | OpenAPI 3.0.3, Redocly, Swagger UI |
-| **Testing** | Jest + Supertest (10 suites, 272 tests) |
-| **Auth** | bcryptjs password hashing + opaque Bearer session tokens |
+| **Testing** | Jest + Supertest (13 suites, 342 tests) |
+| **Auth** | Per-consumer API keys (`X-API-Key`) + bcryptjs password hashing + opaque Bearer session tokens |
+| **Rate limiting** | In-memory fixed window per key (429 + `Retry-After`) |
 
 ---
 
@@ -451,7 +542,7 @@ SkillBridge-webapp-main/
 │
 ├── server/
 │   ├── routes/               # API route handlers (experts, skills, requests, logistics, auth, admin)
-│   ├── middleware/           # auth.js, requireAdmin
+│   ├── middleware/           # apiKey.js (key check + rate limit), auth.js (login), errorHandler.js
 │   ├── services/             # majiClient.js (upstream Maji integration)
 │   ├── app.js                # Express app setup and static docs mounting
 │   ├── db.js                 # SQLite schema, migrations, and seed data
@@ -463,9 +554,10 @@ SkillBridge-webapp-main/
 │   ├── context/              # AuthContext
 │   └── pages/                # Marketplace, ExpertProfile, AdminPage
 │
-├── __tests__/                # 10 test suites (272 tests)
+├── __tests__/                # 13 test suites (342 tests)
 ├── openapi.yaml              # OpenAPI 3.0 contract
 ├── BLIND_TEST_REPORT.md      # Week 8 Blind Swap & Testing Report
+├── SECURITY_AUDIT.md         # Week 9 security self-audit
 ├── package.json
 └── README.md
 ```

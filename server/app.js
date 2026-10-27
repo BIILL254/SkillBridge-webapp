@@ -24,21 +24,61 @@ import skillsRouter from "./routes/skills.routes.js";
 import logisticsRouter from "./routes/logistics.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import adminRouter from "./routes/admin.routes.js";
+import { createRequireApiKey, createRateLimit } from "./middleware/apiKey.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
+
+// Don't advertise "X-Powered-By: Express" on every response.
+app.disable("x-powered-by");
+
+// Behind a host's reverse proxy (Render), req.ip would be the proxy's address
+// unless Express is told to trust the forwarded one. Set TRUST_PROXY=1 there.
+// Leave it unset locally so a client cannot fake its address.
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", /^\d+$/.test(process.env.TRUST_PROXY) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY);
+}
+
+const intFromEnv = (name, fallback) => {
+  const n = Number.parseInt(process.env[name], 10);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+};
 
 // CORS: permissive by default (fine for local dev — the Vite dev server
 // runs on a different port). Once deployed, set ALLOWED_ORIGIN in the
 // environment to your actual frontend URL to stop other websites' JS
 // from being able to call this API directly from a browser.
 const allowedOrigin = process.env.ALLOWED_ORIGIN;
-app.use(cors(allowedOrigin ? { origin: allowedOrigin } : {}));
-app.use(express.json());  // parse JSON request bodies into req.body
+app.use(cors(allowedOrigin ? { origin: allowedOrigin } : {})); // also answers browser preflights (OPTIONS), which carry no API key
 
-// simple endpoint to check the server is actually up
+// ---- Public: the ONLY things reachable without an API key -----------------
+// /api/health: a host's uptime check cannot send a key, and it returns no data.
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+// The published documentation (Week 8): static pages and the contract file.
+// They explain how to use the API and contain no user data; a stranger
+// needs them BEFORE they have a key.
+app.use("/docs", express.static(docsPath));
+app.use("/api-docs", express.static(docsPath));
+app.get("/openapi.yaml", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "openapi.yaml"));
+});
+
+// ---- Everything below requires a valid X-API-Key ---------------------------
+// Registered BEFORE the routes (and before the body parser), so a request with
+// no key or a wrong key gets 401 and no route handler ever runs.
+app.use(createRequireApiKey());
+// Per-key rate limit (429 + Retry-After). Defaults: 100 requests/minute for
+// each partner/team key, 300/minute per IP address for our own web app.
+app.use(createRateLimit({
+  windowMs: intFromEnv("RATE_LIMIT_WINDOW_MS", 60_000),
+  max: intFromEnv("RATE_LIMIT_MAX", 100),
+  webMax: intFromEnv("RATE_LIMIT_WEB_MAX", 300),
+}));
+
+app.use(express.json());  // parse JSON request bodies into req.body
 
 app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);
@@ -51,39 +91,16 @@ app.use("/api/admin", adminRouter);
 app.use("/api/experts", expertsRouter);
 app.use("/api/skills", skillsRouter);
 
-// Root route aliases for AgroConnect: allows calling both /api/experts and /experts
-// directly as documented in ENDPOINT_LIST.md
-app.use("/experts", expertsRouter);
-app.use("/skills", skillsRouter);
-app.use("/requests", requestsRouter);
-
 // Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
 app.use("/api/logistics", logisticsRouter);
-
-// Direct interactive testing UI for AgroConnect and consumers
-app.get(["/swagger", "/test"], (req, res) => {
-  res.sendFile(path.join(docsPath, "swagger.html"));
-});
-
-// Documentation site and OpenAPI spec
-app.use("/docs", express.static(docsPath));
-app.use("/api-docs", express.static(docsPath));
-app.get("/openapi.yaml", (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "openapi.yaml"));
-});
 
 // catch-all for unmatched API routes
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
-// global error handler — keeps a thrown error (bad JSON body, a DB
-// constraint failure, an insufficient-coins guard, etc.) from crashing the
-// process or leaking a raw stack trace to the client. Must be defined last,
-// and needs all four args for Express to treat it as an error handler.
-app.use((err, req, res, next) => {
-  if (process.env.NODE_ENV !== "test") console.error(err); // tests trigger errors on purpose; keep their output readable
-  res.status(err.status || 500).json({ error: err.message || "Something went wrong" });
-});
+// global error handler: see middleware/errorHandler.js (never leaks raw
+// internal error messages to the client)
+app.use(errorHandler);
 
 export default app;

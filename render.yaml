@@ -20,6 +20,17 @@ services:
       # Password for the seeded "admin" account. Pick a long random one.
       - key: ADMIN_PASSWORD
         sync: false
+      # Keys that outside consumers send in the X-API-Key header, written
+      # name:key and comma separated, e.g. agroconnect:<key>,team:<key>.
+      # Generate each with: node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+      - key: API_KEYS
+        sync: false
+      # The key our own frontend sends (same value as VITE_API_KEY below).
+      - key: WEB_API_KEY
+        sync: false
+      # Render sits behind one proxy; this lets the rate limiter see real visitor addresses.
+      - key: TRUST_PROXY
+        value: "1"
       # The frontend's address, e.g. https://skillbridge-web.onrender.com
       # (no trailing slash). Lets only your site call the API from a browser.
       - key: ALLOWED_ORIGIN
@@ -37,4 +48,7 @@ services:
       # The backend's address ending in /api, e.g.
       # https://skillbridge-api.onrender.com/api (baked in at build time).
       - key: VITE_API_URL
+        sync: false
+      # Same value as the API's WEB_API_KEY (baked in at build time).
+      - key: VITE_API_KEY
         sync: false

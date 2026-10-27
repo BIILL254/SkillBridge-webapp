@@ -3,7 +3,7 @@
   "info": {
     "title": "SkillBridge API",
     "version": "1.0.0",
-    "description": "API contract for SkillBridge based on the Week 3 endpoint list. This API provides expert discovery, consultation booking, logistics integration with Maji Website, and delivery tracking.\n Every error response has the shape `{ \"error\": \"<message>\" }`. The /logistics endpoints require a bearer token from POST /auth/login.",
+    "description": "API contract for SkillBridge. It provides expert discovery, consultation booking, a skills catalogue and a logistics proxy to Maji Website.\n\n**Authentication.** Every endpoint except `GET /health` requires an API key in the `X-API-Key` header (scheme `apiKeyAuth`). A missing or wrong key returns `401` before the endpoint runs. Endpoints about a person (profile, sessions, admin, logistics, and student swap requests) additionally need the login token from `POST /auth/login` as `Authorization: Bearer <token>` (scheme `bearerAuth`).\n\n**Rate limit.** 100 requests per minute per API key (our own web app: 300 per minute per visitor address). Going over returns `429` with a `Retry-After` header (seconds) and a JSON body.\n\n**Errors.** Every error response has the shape `{ \"error\": \"<message>\" }` (the `429` also has `retryAfter`).",
     "license": {
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
@@ -17,9 +17,8 @@
   ],
   "security": [
     {
-      "bearerAuth": []
-    },
-    {}
+      "apiKeyAuth": []
+    }
   ],
   "tags": [
     {
@@ -83,7 +82,6 @@
         ],
         "summary": "Log in and receive a bearer token",
         "operationId": "login",
-        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -109,7 +107,7 @@
             "$ref": "#/components/responses/BadRequest"
           },
           "401": {
-            "description": "Wrong username or password",
+            "description": "Wrong username or password. Also returned (with \"Missing or invalid API key\") when the X-API-Key header is missing or wrong.",
             "content": {
               "application/json": {
                 "schema": {
@@ -138,7 +136,6 @@
         ],
         "summary": "Create an account and receive a bearer token",
         "operationId": "signup",
-        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -162,6 +159,9 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           },
           "409": {
             "description": "Username already taken",
@@ -249,6 +249,12 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -276,8 +282,14 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -315,6 +327,12 @@
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -345,8 +363,14 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -382,6 +406,9 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
             "description": "Expert does not exist",
             "content": {
@@ -391,8 +418,12 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
-        }
+        },
+        "description": "Two shapes share this path. A consultation booking (expertId, farmerName, topic, date) needs only the API key. A student swap or coin request (type \"swap\" or \"coin\") also needs the login token (bearerAuth)."
       }
     },
     "/experts/{id}/reviews": {
@@ -418,8 +449,14 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -433,6 +470,7 @@
         "operationId": "getStations",
         "security": [
           {
+            "apiKeyAuth": [],
             "bearerAuth": []
           }
         ],
@@ -460,6 +498,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -473,6 +514,7 @@
         "operationId": "getEstates",
         "security": [
           {
+            "apiKeyAuth": [],
             "bearerAuth": []
           }
         ],
@@ -506,6 +548,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -519,6 +564,7 @@
         "operationId": "registerDriverInterest",
         "security": [
           {
+            "apiKeyAuth": [],
             "bearerAuth": []
           }
         ],
@@ -560,6 +606,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           }
         }
       }
@@ -573,6 +622,7 @@
         "operationId": "getDelivery",
         "security": [
           {
+            "apiKeyAuth": [],
             "bearerAuth": []
           }
         ],
@@ -591,6 +641,9 @@
         "responses": {
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "501": {
             "description": "Not implemented by Maji Website",
@@ -614,6 +667,7 @@
         "operationId": "createDelivery",
         "security": [
           {
+            "apiKeyAuth": [],
             "bearerAuth": []
           }
         ],
@@ -621,6 +675,9 @@
         "responses": {
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "501": {
             "description": "Not implemented by Maji Website",
@@ -638,11 +695,17 @@
   },
   "components": {
     "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Per-consumer API key, sent in the X-API-Key header on every request except GET /health. Keys are issued privately, one per consumer. Never share or commit a real key; use <your-api-key> as a placeholder."
+      },
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "Token",
-        "description": "Bearer token placeholder for Week 9 authentication. Pass 'Authorization: Bearer <token>'. For Week 8, public downstream endpoints accept any placeholder token or open requests.\n"
+        "bearerFormat": "Opaque session token",
+        "description": "Login token returned by POST /auth/login, sent as \"Authorization: Bearer <token>\". Sent IN ADDITION to the API key on endpoints that act on a logged-in student."
       }
     },
     "parameters": {
@@ -678,11 +741,40 @@
         }
       },
       "Unauthorized": {
-        "description": "Missing, invalid or expired token",
+        "description": "Missing or invalid API key (X-API-Key), or on a student endpoint a missing/expired login token.",
         "content": {
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "badKey": {
+                "summary": "Missing or wrong API key",
+                "value": {
+                  "error": "Missing or invalid API key"
+                }
+              },
+              "noLogin": {
+                "summary": "Valid key but no login token on a student endpoint",
+                "value": {
+                  "error": "Not logged in"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Rate limit exceeded: more than 100 requests per minute for this API key.",
+        "headers": {
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RateLimitError"
             }
           }
         }
@@ -892,7 +984,7 @@
           "phone": {
             "type": "string",
             "description": "07XXXXXXXX or 01XXXXXXXX",
-            "example": "0712345678"
+            "example": 712345678
           },
           "password": {
             "type": "string",
@@ -1043,6 +1135,33 @@
             "type": "string",
             "format": "date-time"
           }
+        }
+      },
+      "RateLimitError": {
+        "type": "object",
+        "required": [
+          "error",
+          "retryAfter"
+        ],
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Too many requests"
+          },
+          "retryAfter": {
+            "type": "integer",
+            "description": "Seconds until the limit resets",
+            "example": 37
+          }
+        }
+      }
+    },
+    "headers": {
+      "RetryAfter": {
+        "description": "Seconds to wait before sending another request.",
+        "schema": {
+          "type": "integer",
+          "example": 37
         }
       }
     }

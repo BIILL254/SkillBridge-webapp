@@ -72,7 +72,8 @@ db.exec(`
     time TEXT NOT NULL,
     dur INTEGER NOT NULL DEFAULT 60,
     color TEXT NOT NULL DEFAULT '#10B981',
-    reviewed INTEGER NOT NULL DEFAULT 0
+    reviewed INTEGER NOT NULL DEFAULT 0,
+    user_id INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS profiles (
@@ -139,18 +140,18 @@ const seedUsers = [
 const userSkills = {
   1: { offer: ["AI & Automation", "Web Development", "Python"], want: ["UI/UX Design", "Public Speaking", "Sales"] },
   2: { offer: ["UI/UX Design", "Figma", "Content Creation"], want: ["Web Development", "Data Analysis", "Digital Marketing"] },
-  3: { offer: ["Sales", "Taxes", "Digital Marketing"], want: ["Web Development", "Cybersecurity", "Public Speaking"] },
+  3: { offer: ["Sales", "Taxes", "Digital Marketing", "Water Sales"], want: ["Web Development", "Cybersecurity", "Public Speaking"] },
   4: { offer: ["Music Production", "Songwriting", "Content Creation"], want: ["Digital Marketing", "Sales", "AI & Automation"] },
   5: { offer: ["Football Coaching", "Fitness Training"], want: ["Sales", "Digital Marketing", "Public Speaking"] },
-  6: { offer: ["Chemistry", "Academic Tutoring"], want: ["UI/UX Design", "Public Speaking", "Sales"] },
-  7: { offer: ["Cybersecurity", "Cloud Computing", "Sales"], want: ["Public Speaking", "Content Creation", "AI & Automation"] },
+  6: { offer: ["Chemistry", "Academic Tutoring", "Water Treatment"], want: ["UI/UX Design", "Public Speaking", "Sales"] },
+  7: { offer: ["Cybersecurity", "Cloud Computing", "Sales", "Water Sales"], want: ["Public Speaking", "Content Creation", "AI & Automation"] },
   8: { offer: ["Public Speaking", "Strategy & Planning"], want: ["Web Development", "Cybersecurity", "Digital Marketing"] },
   9: { offer: ["Fitness Training", "Public Speaking"], want: ["AI & Automation", "Cloud Computing", "Sales"] },
   10: { offer: ["Karate", "Fitness Training"], want: ["Web Development", "Digital Marketing", "Music Production"] },
   11: { offer: ["Spanish", "French", "Translation"], want: ["Web Development", "Data Analysis", "Cybersecurity"] },
   12: { offer: ["Data Analysis", "Statistics", "Academic Tutoring"], want: ["Web Development", "Cybersecurity", "UI/UX Design"] },
-  13: { offer: ["Agronomy", "Soil Health", "Irrigation Systems", "Crop Disease Management"], want: ["Digital Marketing", "Data Analysis", "Web Development"] },
-  14: { offer: ["Farm Tech", "Livestock Management", "Organic Farming"], want: ["Sales", "Content Creation", "AI & Automation"] },
+  13: { offer: ["Agronomy", "Soil Health", "Irrigation Systems", "Crop Disease Management", "Water Treatment"], want: ["Digital Marketing", "Data Analysis", "Web Development"] },
+  14: { offer: ["Farm Tech", "Livestock Management", "Organic Farming"], want: ["Sales", "Content Creation", "AI & Automation", "Water Treatment"] },
 };
 
 const seed = db.transaction(() => {
@@ -191,9 +192,10 @@ const seed = db.transaction(() => {
     "I used 3 Skill Coins for this. I really need Data Analysis skills!", "1d ago", "sent");
 
   const insertSession = db.prepare(`
-    INSERT INTO sessions (id, with_user, skill, date, time, dur, color, reviewed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO sessions (id, with_user, skill, date, time, dur, color, reviewed, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
   `);
+  // the demo sessions belong to user 1 (Bill Amani, the demo account)
   insertSession.run(1, "Jessica", "UI/UX Design basics", "2026-06-26", "14:00", 60, "#1FD4A0", 0);
   insertSession.run(2, "K.Dot", "Music Production intro", "2026-06-28", "10:30", 45, "#F5B731", 0);
   insertSession.run(3, "Jordan Lee", "Spanish for beginners", "2026-06-30", "16:00", 60, "#8B6BF5", 0);
@@ -224,6 +226,15 @@ if (!columnExists("users", "estate")) {
     ALTER TABLE users ADD COLUMN lng REAL;
   `);
 }
+// Week 9 security fix: sessions used to have no owner, so every logged-in
+// user could list (and mark reviewed) everyone's sessions. Add the owner
+// column; rows from before this change had no recorded owner, so they are
+// assigned to user 1 (the demo account that owns the seed sessions).
+if (!columnExists("sessions", "user_id")) {
+  db.exec(`ALTER TABLE sessions ADD COLUMN user_id INTEGER;`);
+  db.exec(`UPDATE sessions SET user_id = 1 WHERE user_id IS NULL;`);
+}
+
 if (!columnExists("skills", "category")) {
   db.exec(`ALTER TABLE skills ADD COLUMN category TEXT;`);
 }
@@ -291,6 +302,10 @@ seed();
 // taxonomy via keyword matching. Anything unmatched falls back to
 // "Life Skills" so /api/skills?tag= always has something to filter.
 const CATEGORY_KEYWORDS = {
+  // Water categories must come first: "water sales" would otherwise be
+  // caught by Business's "sales" keyword.
+  "Water Treatment": ["water treatment", "water purification", "filtration", "chlorination", "desalination", "water quality"],
+  "Water Sales": ["water sales", "water vending", "water delivery", "bulk water"],
   Technology: ["web development", "ai & automation", "python", "cybersecurity", "cloud computing", "data analysis", "statistics"],
   Design: ["ui/ux design", "figma"],
   Business: ["sales", "taxes", "digital marketing", "strategy & planning"],
@@ -316,6 +331,33 @@ function categorize(name) {
   const updateSkillCategory = db.prepare("UPDATE skills SET category = ? WHERE id = ?");
   for (const skill of skillsMissingCategory) {
     updateSkillCategory.run(categorize(skill.name), skill.id);
+  }
+}
+
+// Water Treatment / Water Sales backfill for databases created before these
+// skills existed (fresh databases get them from the seed above). Runs only
+// when the skill is missing, so a user who later removes one of these skills
+// does not get it re-added on the next restart.
+{
+  const hasWater = db.prepare("SELECT 1 FROM skills WHERE name = 'Water Treatment'").get();
+  if (!hasWater) {
+    const addWater = db.transaction(() => {
+      const upsertSkill = db.prepare("INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)");
+      const getSkillId = db.prepare("SELECT id FROM skills WHERE name = ?");
+      const userExists = db.prepare("SELECT 1 FROM users WHERE id = ?");
+      const link = db.prepare("INSERT OR IGNORE INTO user_skills (user_id, skill_id, type) VALUES (?, ?, ?)");
+      for (const [name, category] of [["Water Treatment", "Water Treatment"], ["Water Sales", "Water Sales"]]) {
+        upsertSkill.run(name, category);
+      }
+      // [userId, skill, offer|want]
+      for (const [userId, skill, type] of [
+        [6, "Water Treatment", "offer"], [13, "Water Treatment", "offer"], [14, "Water Treatment", "want"],
+        [3, "Water Sales", "offer"], [7, "Water Sales", "offer"],
+      ]) {
+        if (userExists.get(userId)) link.run(userId, getSkillId.get(skill).id, type);
+      }
+    });
+    addWater();
   }
 }
 
@@ -507,9 +549,13 @@ export async function getExpertAvailability(id) {
   const u = await getUserById(id);
   if (!u || !isExpert(u)) return null;
 
-  const sessions = await getSessions();
+  // An expert's calendar is shared: a slot booked by ANY student is taken.
+  // Only date and time are read here - never who booked it - so nothing about
+  // other users leaks through this public availability endpoint.
   const booked = new Set(
-    sessions.filter((s) => s.with.toLowerCase() === u.name.toLowerCase()).map((s) => `${s.date}_${s.time}`)
+    db.prepare("SELECT date, time FROM sessions WHERE LOWER(with_user) = LOWER(?)")
+      .all(u.name)
+      .map((s) => `${s.date}_${s.time}`)
   );
 
   const slots = [];
@@ -593,18 +639,26 @@ export async function removeRequest(id) {
   return result.changes > 0; // true if a row actually existed and was deleted
 }
 
-export async function getSessions() {
+// Only the sessions that belong to the given user.
+export async function getSessions(userId) {
   return db.prepare(`
     SELECT id, with_user AS "with", skill, date, time, dur, color, reviewed
-    FROM sessions ORDER BY date, time
-  `).all().map((s) => ({ ...s, reviewed: Boolean(s.reviewed) }));
+    FROM sessions WHERE user_id = ? ORDER BY date, time
+  `).all(userId).map((s) => ({ ...s, reviewed: Boolean(s.reviewed) }));
 }
 
-export async function addSession({ withUser, skill, date, time, dur, color }) {
+// Owner lookup for the route's 404 / 403 check. user_id is NOT part of the
+// session shape returned to clients.
+export async function getSessionOwner(id) {
+  const row = db.prepare("SELECT user_id AS userId FROM sessions WHERE id = ?").get(id);
+  return row ? row.userId : undefined; // undefined = no such session
+}
+
+export async function addSession({ userId, withUser, skill, date, time, dur, color }) {
   const result = db.prepare(`
-    INSERT INTO sessions (with_user, skill, date, time, dur, color, reviewed)
-    VALUES (?, ?, ?, ?, ?, ?, 0)
-  `).run(withUser, skill, date, time, dur || 60, color || "#10B981");
+    INSERT INTO sessions (with_user, skill, date, time, dur, color, reviewed, user_id)
+    VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+  `).run(withUser, skill, date, time, dur || 60, color || "#10B981", userId);
 
   const s = db.prepare(`
     SELECT id, with_user AS "with", skill, date, time, dur, color, reviewed

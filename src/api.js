@@ -7,6 +7,12 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
+// The API requires an X-API-Key on every request (Week 9). This is OUR web
+// app's own key (the server's WEB_API_KEY). Anything in a browser bundle is
+// public, so this key identifies the app and gets it rate-limited — it is not
+// what protects a student's data; their login (the bearer token) does that.
+const API_KEY = import.meta.env.VITE_API_KEY || "";
+
 // Holds the current session's bearer token in memory. Set by AuthContext
 // on login/signup/app-load, cleared on logout. Kept as a plain module
 // variable (not re-read from localStorage on every request) so token
@@ -20,6 +26,7 @@ async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(API_KEY ? { "X-API-Key": API_KEY } : {}),
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
     ...options,
@@ -91,7 +98,4 @@ export const api = {
   // doesn't exist upstream. See CONTRACT_QUESTIONS.md.
   getStations: (estate) =>
     request(`/logistics/stations${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`),
-  getEstates: (deliveryStatus) =>
-    request(`/logistics/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`),
 };
-

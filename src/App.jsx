@@ -24,6 +24,8 @@ import ForcePasswordChangeScreen from "./pages/ForcePasswordChangeScreen.jsx";
 // person's skills AND their dept, plus a few related keywords for categories.
 const TAG_KEYWORDS = {
   agriculture: ["agronomy", "soil", "irrigation", "crop", "farm", "livestock", "organic", "pest", "greenhouse"],
+  "water treatment": ["purification", "filtration", "chlorination", "desalination", "water quality", "borehole", "reverse osmosis"],
+  "water sales": ["water vending", "water delivery", "bulk water", "bottled water", "water refill", "water distribution"],
 };
 function matchesTag(u, tag) {
   const t = tag.toLowerCase();

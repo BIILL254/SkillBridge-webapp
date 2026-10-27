@@ -10,6 +10,10 @@ import {
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
+// The app never awards more than 2 coins at once; 10 leaves headroom while
+// stopping "give myself a million coins" in one request.
+const MAX_COIN_GRANT = 10;
+
 const router = Router();
 
 // Every route here is "my profile" — requireAuth so req.user.id is always
@@ -73,6 +77,14 @@ router.patch("/coins", asyncHandler(async (req, res) => {
   const { delta, reason } = req.body;
   if (typeof delta !== "number") {
     return res.status(400).json({ error: "delta must be a number" });
+  }
+  // A single call can never grant more than MAX_COIN_GRANT, and only whole
+  // coins. (Spending large amounts is still caught by the insufficient-coins check.)
+  if (!Number.isInteger(delta) || delta > MAX_COIN_GRANT) {
+    return res.status(400).json({ error: `delta must be a whole number of at most ${MAX_COIN_GRANT}` });
+  }
+  if (reason !== undefined && reason !== null && (typeof reason !== "string" || reason.length > 120)) {
+    return res.status(400).json({ error: "reason must be a string of at most 120 characters" });
   }
 
   await adjustCoins(req.user.id, delta, reason);

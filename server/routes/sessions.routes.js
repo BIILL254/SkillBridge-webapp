@@ -1,6 +1,6 @@
 // server/routes/sessions.routes.js
 import { Router } from "express";
-import { getSessions, addSession, markSessionReviewed } from "../db.js";
+import { getSessions, getSessionOwner, addSession, markSessionReviewed } from "../db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -9,7 +9,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get("/", asyncHandler(async (req, res) => {
-  res.json(await getSessions());
+  res.json(await getSessions(req.user.id)); // only MY sessions
 }));
 
 // A real calendar date in YYYY-MM-DD (rejects 2026-02-30, which a plain regex would let through)
@@ -43,6 +43,7 @@ router.post("/", asyncHandler(async (req, res) => {
   }
 
   const newSession = await addSession({
+    userId: req.user.id, // owner comes from the verified token, never from the body
     withUser: withUser.trim(),
     skill: skill.trim(),
     date,
@@ -55,8 +56,13 @@ router.post("/", asyncHandler(async (req, res) => {
 }));
 
 router.patch("/:id", asyncHandler(async (req, res) => {
-  const updated = await markSessionReviewed(Number(req.params.id));
-  if (!updated) return res.status(404).json({ error: "Session not found" });
+  const id = Number(req.params.id);
+  const owner = await getSessionOwner(id);
+  if (owner === undefined) return res.status(404).json({ error: "Session not found" });
+  if (owner !== req.user.id) {
+    return res.status(403).json({ error: "You can only change your own sessions" });
+  }
+  const updated = await markSessionReviewed(id);
   res.json(updated);
 }));
 

@@ -2,10 +2,21 @@ openapi: 3.0.3
 info:
   title: SkillBridge API
   version: 1.0.0
-  description: "API contract for SkillBridge based on the Week 3 endpoint list. This API provides expert\
-    \ discovery, consultation booking, logistics integration with Maji Website, and delivery tracking.\n\
-    \ Every error response has the shape `{ \"error\": \"<message>\" }`. The /logistics endpoints require\
-    \ a bearer token from POST /auth/login."
+  description: 'API contract for SkillBridge. It provides expert discovery, consultation booking, a skills catalogue
+    and a logistics proxy to Maji Website.
+
+
+    **Authentication.** Every endpoint except `GET /health` requires an API key in the `X-API-Key` header (scheme
+    `apiKeyAuth`). A missing or wrong key returns `401` before the endpoint runs. Endpoints about a person (profile,
+    sessions, admin, logistics, and student swap requests) additionally need the login token from `POST /auth/login`
+    as `Authorization: Bearer <token>` (scheme `bearerAuth`).
+
+
+    **Rate limit.** 100 requests per minute per API key (our own web app: 300 per minute per visitor address). Going
+    over returns `429` with a `Retry-After` header (seconds) and a JSON body.
+
+
+    **Errors.** Every error response has the shape `{ "error": "<message>" }` (the `429` also has `retryAfter`).'
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -13,8 +24,7 @@ servers:
 - url: http://localhost:3001/api
   description: Local development server
 security:
-- bearerAuth: []
-- {}
+- apiKeyAuth: []
 tags:
 - name: Auth
   description: Log in or sign up to get a bearer token
@@ -53,7 +63,6 @@ paths:
       - Auth
       summary: Log in and receive a bearer token
       operationId: login
-      security: []
       requestBody:
         required: true
         content:
@@ -70,7 +79,8 @@ paths:
         '400': &id001
           $ref: '#/components/responses/BadRequest'
         '401':
-          description: Wrong username or password
+          description: Wrong username or password. Also returned (with "Missing or invalid API key") when the X-API-Key
+            header is missing or wrong.
           content:
             application/json:
               schema:
@@ -87,7 +97,6 @@ paths:
       - Auth
       summary: Create an account and receive a bearer token
       operationId: signup
-      security: []
       requestBody:
         required: true
         content:
@@ -114,6 +123,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /experts:
     get:
       tags:
@@ -157,6 +168,10 @@ paths:
                   $ref: '#/components/schemas/Expert'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /experts/{id}:
     get:
       tags:
@@ -174,6 +189,10 @@ paths:
                 $ref: '#/components/schemas/Expert'
         '404':
           $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /skills:
     get:
       tags:
@@ -197,6 +216,10 @@ paths:
                   $ref: '#/components/schemas/Skill'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /experts/{id}/availability:
     get:
       tags:
@@ -216,6 +239,10 @@ paths:
                   $ref: '#/components/schemas/Availability'
         '404':
           $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /requests:
     post:
       tags:
@@ -243,6 +270,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+      description: Two shapes share this path. A consultation booking (expertId, farmerName, topic, date) needs
+        only the API key. A student swap or coin request (type "swap" or "coin") also needs the login token (bearerAuth).
   /experts/{id}/reviews:
     get:
       tags:
@@ -260,14 +293,19 @@ paths:
                 $ref: '#/components/schemas/ReviewSummary'
         '404':
           $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /logistics/stations:
     get:
       tags:
       - Logistics
       summary: Return Maji vendor stations
       operationId: getStations
-      security: &id002
-      - bearerAuth: []
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
       parameters:
       - name: estate
         in: query
@@ -282,15 +320,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StationList'
-        '401': &id003
+        '401': &id002
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /logistics/estates:
     get:
       tags:
       - Logistics
       summary: Return estates Maji knows about
       operationId: getEstates
-      security: *id002
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
       parameters:
       - name: deliveryStatus
         in: query
@@ -308,14 +350,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/EstateList'
         '400': *id001
-        '401': *id003
+        '401': *id002
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /logistics/estates/{estateId}/driver-interests:
     post:
       tags:
       - Logistics
       summary: Register a driver's interest in an estate
       operationId: registerDriverInterest
-      security: *id002
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
       description: Forwards to Maji Website. Not used by the SkillBridge UI today.
       parameters:
       - name: estateId
@@ -338,14 +384,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/DriverInterest'
         '400': *id001
-        '401': *id003
+        '401': *id002
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /logistics/deliveries/{id}:
     get:
       tags:
       - Logistics
       summary: Track a delivery (not supported by Maji)
       operationId: getDelivery
-      security: *id002
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
       description: Maji has no delivery tracking, so this always returns 501.
       parameters:
       - name: id
@@ -355,39 +405,49 @@ paths:
           type: integer
         example: 101
       responses:
-        '401': *id003
+        '401': *id002
         '501':
           description: Not implemented by Maji Website
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /logistics/deliveries:
     post:
       tags:
       - Logistics
       summary: Create a delivery order (not supported by Maji)
       operationId: createDelivery
-      security: *id002
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
       description: Maji has no delivery API, so this always returns 501.
       responses:
-        '401': *id003
+        '401': *id002
         '501':
           description: Not implemented by Maji Website
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 components:
   securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Per-consumer API key, sent in the X-API-Key header on every request except GET /health. Keys
+        are issued privately, one per consumer. Never share or commit a real key; use <your-api-key> as a placeholder.
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: Token
-      description: 'Bearer token placeholder for Week 9 authentication. Pass ''Authorization: Bearer <token>''.
-        For Week 8, public downstream endpoints accept any placeholder token or open requests.
-
-        '
+      bearerFormat: Opaque session token
+      description: 'Login token returned by POST /auth/login, sent as "Authorization: Bearer <token>". Sent IN ADDITION
+        to the API key on endpoints that act on a logged-in student.'
   parameters:
     ExpertId:
       name: id
@@ -410,11 +470,29 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Unauthorized:
-      description: Missing, invalid or expired token
+      description: Missing or invalid API key (X-API-Key), or on a student endpoint a missing/expired login token.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          examples:
+            badKey:
+              summary: Missing or wrong API key
+              value:
+                error: Missing or invalid API key
+            noLogin:
+              summary: Valid key but no login token on a student endpoint
+              value:
+                error: Not logged in
+    TooManyRequests:
+      description: 'Rate limit exceeded: more than 100 requests per minute for this API key.'
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
   schemas:
     Error:
       type: object
@@ -674,3 +752,22 @@ components:
         createdAt:
           type: string
           format: date-time
+    RateLimitError:
+      type: object
+      required:
+      - error
+      - retryAfter
+      properties:
+        error:
+          type: string
+          example: Too many requests
+        retryAfter:
+          type: integer
+          description: Seconds until the limit resets
+          example: 37
+  headers:
+    RetryAfter:
+      description: Seconds to wait before sending another request.
+      schema:
+        type: integer
+        example: 37
