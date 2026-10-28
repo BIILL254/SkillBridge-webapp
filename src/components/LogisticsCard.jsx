@@ -12,6 +12,7 @@ import { api } from "../api.js";
 export default function LogisticsCard({ estate }) {
   const [stations, setStations] = useState(null);
   const [estates, setEstates] = useState([]);
+  const [topRated, setTopRated] = useState(new Map()); // vendorId -> top-rated vendor
   const [source, setSource] = useState("mock");
   const [error, setError] = useState(null);
   const [showAllEstates, setShowAllEstates] = useState(false);
@@ -20,12 +21,18 @@ export default function LogisticsCard({ estate }) {
     let cancelled = false;
     setError(null);
 
-    // Fetch stations and active estates in parallel
+    // Fetch vendors, active estates and top-rated vendors in parallel
     Promise.allSettled([
       api.getStations(estate),
       api.getEstates("active"),
-    ]).then(([stationsRes, estatesRes]) => {
+      api.getTopRatedVendors(),
+    ]).then(([stationsRes, estatesRes, topRes]) => {
       if (cancelled) return;
+
+      // Top-rated is a nice extra: if it fails, the card still works without stars.
+      if (topRes.status === "fulfilled") {
+        setTopRated(new Map((topRes.value.vendors || []).map((v) => [v.vendorId, v])));
+      }
 
       let hasSuccess = false;
 
@@ -110,25 +117,38 @@ export default function LogisticsCard({ estate }) {
         </div>
       )}
 
-      {/* Stations near user estate */}
+      {/* Water vendors in the user's estate (Maji: GET /api/vendors/locations) */}
       {!error && stations && stations.length > 0 && (
         <div className="space-y-1.5">
           <div className="text-[11px] font-medium text-[var(--sb-text-secondary)] uppercase tracking-wide">
-            Nearby Pickup Stations
+            Water vendors near you
           </div>
           <div className="flex flex-col gap-2">
-            {stations.map((s) => (
-              <div
-                key={s.vendorId || s.stationName}
-                className="flex items-center border border-[var(--sb-border-subtle)] rounded-xl px-3 py-2 bg-[var(--sb-surface-alt)]"
-              >
-                <div className="text-xs font-semibold text-[var(--sb-text-primary)] truncate">
-                  {s.stationName}
+            {stations.map((s) => {
+              const top = topRated.get(s.vendorId);
+              return (
+                <div
+                  key={s.vendorId}
+                  className="flex items-center justify-between gap-2 border border-[var(--sb-border-subtle)] rounded-xl px-3 py-2 bg-[var(--sb-surface-alt)]"
+                >
+                  <div className="text-xs font-semibold text-[var(--sb-text-primary)] truncate">
+                    {s.businessName}
+                  </div>
+                  {top && (
+                    <span className="shrink-0 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                      ★ {Number(top.rating).toFixed(1)} top rated
+                    </span>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+      )}
+      {!error && stations && stations.length === 0 && estate && (
+        <p className="text-[11px] text-[var(--sb-text-tertiary)]">
+          No Maji water vendors are listed in your estate yet.
+        </p>
       )}
 
       {/* Live Verified Estates list from Maji Website */}

@@ -19,6 +19,7 @@ describe("a request with NO key is rejected with 401", () => {
     ["get", "/api/profile"],
     ["get", "/api/admin/users"],
     ["get", "/api/logistics/stations"],
+    ["get", "/api/logistics/vendors/all"],
     ["post", "/api/auth/login"],
     ["post", "/api/auth/signup"],
     ["post", "/api/requests"],
@@ -43,6 +44,33 @@ describe("a request with NO key is rejected with 401", () => {
     const login = await supertest(app).post("/api/auth/login").set("X-API-Key", KEYS.web).send({ username: "billamani", password: "1234" });
     const res = await raw().get("/api/profile").set("Authorization", `Bearer ${login.body.token}`);
     expect(res.status).toBe(401);
+  });
+});
+
+// The root aliases (/experts, /skills, /requests) exist for AgroConnect. They
+// must NOT be a way around the key: same rule as the /api versions.
+describe("root aliases need the key too", () => {
+  it.each([["get", "/experts"], ["get", "/skills"], ["get", "/requests"], ["post", "/requests"]])(
+    "%s %s with no key -> 401",
+    async (method, url) => {
+      const res = await raw()[method](url).send({});
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: "Missing or invalid API key" });
+    }
+  );
+
+  it.each([["get", "/experts"], ["get", "/skills"]])("%s %s with a valid key -> 200", async (method, url) => {
+    const res = await raw()[method](url).set("X-API-Key", KEYS.agroconnect);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it("/swagger and /test are public docs pages (like /docs), not data", async () => {
+    for (const url of ["/swagger", "/test"]) {
+      const res = await raw().get(url);
+      expect(res.status).toBe(200);
+      expect(res.text).toContain("SwaggerUIBundle");
+    }
   });
 });
 

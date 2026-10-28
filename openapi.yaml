@@ -301,7 +301,9 @@ paths:
     get:
       tags:
       - Logistics
-      summary: Return Maji vendor stations
+      summary: Return Maji water vendors (optionally for one estate)
+      description: Forwards to Maji's GET /api/vendors/locations. Maji needs no key; we call it from our server,
+        never from the browser.
       operationId: getStations
       security:
       - apiKeyAuth: []
@@ -311,8 +313,9 @@ paths:
         in: query
         schema:
           type: string
-        example: Westlands
-        description: Case-insensitive part of an estate name
+        example: Kasarani
+        description: Maji's estate name (e.g. Kasarani, Lang'ata); capitals are ignored. A student address such as
+          "Kasarani, Nairobi" is shortened to the part before the comma. Must not be blank (400).
       responses:
         '200':
           description: Stations retrieved
@@ -320,8 +323,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StationList'
+        '400': *id001
         '401': &id002
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /logistics/vendors/all:
+    get:
+      tags:
+      - Logistics
+      summary: Return every Maji water vendor, with contact details
+      description: Forwards to Maji's GET /api/vendors/all. Maji treats every vendor as someone students can approach
+        about water sales and water treatment. Includes each vendor's owner name and phone number, so this route needs
+        both the API key and a student login.
+      operationId: getAllVendors
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
+      parameters:
+      - name: estate
+        in: query
+        schema:
+          type: string
+        example: Kasarani
+        description: Maji's estate name; capitals ignored; "Kasarani, Nairobi" is shortened to "Kasarani". Must not be blank (400).
+      responses:
+        '200':
+          description: Vendors retrieved (an empty list if the estate has none)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllVendorList'
+        '400': *id001
+        '401': *id002
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /logistics/vendors/top-rated:
+    get:
+      tags:
+      - Logistics
+      summary: Return the top-rated verified water vendor in each estate
+      description: Forwards to Maji's GET /api/vendors/top-rated. Maji also sends each vendor's owner name and phone
+        number; we deliberately do not pass those on.
+      operationId: getTopRatedVendors
+      security:
+      - apiKeyAuth: []
+        bearerAuth: []
+      responses:
+        '200':
+          description: Top-rated vendors retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopRatedVendorList'
+        '401': *id002
         '429':
           $ref: '#/components/responses/TooManyRequests'
   /logistics/estates:
@@ -680,16 +735,106 @@ components:
           type: array
           items:
             type: object
+            required:
+            - vendorId
+            - businessName
+            - estate
             properties:
               vendorId:
+                type: integer
+                example: 1
+              businessName:
                 type: string
-                example: ven_211
-              stationName:
+                example: Chemchemi Fresh Water Co.
+              estate:
                 type: string
-                example: Westlands Pickup Station
-              targetEstateId:
+                example: Kasarani
+    AllVendorList:
+      type: object
+      required:
+      - source
+      - vendors
+      properties:
+        source:
+          $ref: '#/components/schemas/Source'
+        vendors:
+          type: array
+          items:
+            type: object
+            required:
+            - vendorId
+            - businessName
+            - estate
+            - rating
+            - isVerified
+            - isOnline
+            properties:
+              vendorId:
+                type: integer
+                example: 17
+              businessName:
                 type: string
-                example: est_1042
+                example: AquaFresh Nairobi
+              estate:
+                type: string
+                example: Dagoretti
+              rating:
+                type: number
+                example: 4.4
+              isVerified:
+                type: boolean
+                example: true
+              isOnline:
+                type: boolean
+                example: false
+              ownerName:
+                type: string
+                nullable: true
+                example: Daniel Mutua
+              phone:
+                type: string
+                nullable: true
+                example: '0718045704'
+    TopRatedVendorList:
+      type: object
+      required:
+      - source
+      - vendors
+      properties:
+        source:
+          $ref: '#/components/schemas/Source'
+        vendors:
+          type: array
+          items:
+            type: object
+            required:
+            - vendorId
+            - businessName
+            - estate
+            - rating
+            - isVerified
+            - isOnline
+            properties:
+              vendorId:
+                type: integer
+                example: 17
+              businessName:
+                type: string
+                example: AquaFresh Nairobi
+              estate:
+                type: string
+                example: Dagoretti
+              rating:
+                type: number
+                minimum: 3
+                maximum: 5
+                example: 4.4
+              isVerified:
+                type: boolean
+                example: true
+              isOnline:
+                type: boolean
+                example: false
     EstateList:
       type: object
       required:

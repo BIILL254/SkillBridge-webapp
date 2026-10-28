@@ -1,0 +1,208 @@
+openapi: 3.0.0
+
+info:
+  title: Maji Platform - SkillsBridge API
+  version: 1.0.0
+  description: >
+    Read-only API exposed by Maji so that SkillsBridge can read estates with
+    active orders, active delivery schedules, top-rated vendors and vendor
+    locations. No authentication is required. All endpoints return JSON arrays.
+
+servers:
+  - url: https://maji-api-onrender-com.onrender.com/api
+    description: Live deployment (Render free tier; first request after ~15 min idle can take up to a minute)
+  - url: http://localhost:3001/api
+    description: Local development
+
+tags:
+  - name: SkillsBridge
+    description: Read-only endpoints consumed by SkillsBridge.
+
+paths:
+
+  /orders/active/estates:
+    get:
+      tags:
+        - SkillsBridge
+      summary: Get estates with active orders
+      description: >
+        Returns each estate that has at least one order with status pending,
+        accepted or on the way. Each estate appears once.
+      responses:
+        '200':
+          description: Estates where active orders are taking place
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - estate
+                  properties:
+                    estate:
+                      type: string
+                      example: Lang'ata
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /orders/active/schedules:
+    get:
+      tags:
+        - SkillsBridge
+      summary: Get delivery schedules for active orders
+      description: >
+        Returns each distinct estate and delivery window pair among active
+        orders (status pending, accepted or on the way).
+      responses:
+        '200':
+          description: Active delivery schedules by estate
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - estate
+                    - deliveryTime
+                  properties:
+                    estate:
+                      type: string
+                      example: Lang'ata
+                    deliveryTime:
+                      type: string
+                      description: Delivery window chosen by the customer.
+                      example: Afternoon (12pm - 6pm)
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /vendors/top-rated:
+    get:
+      tags:
+        - SkillsBridge
+      summary: Get top-rated vendors
+      description: >
+        Returns the highest-rated verified vendor in each estate. If two
+        vendors in an estate share the top rating, both are returned.
+      responses:
+        '200':
+          description: Top-rated vendors and their business information
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - vendorId
+                    - businessName
+                    - estate
+                    - rating
+                    - isVerified
+                    - isOnline
+                  properties:
+                    vendorId:
+                      type: integer
+                      example: 17
+                    businessName:
+                      type: string
+                      example: AquaFresh Nairobi
+                    estate:
+                      type: string
+                      example: Dagoretti
+                    rating:
+                      type: number
+                      format: float
+                      minimum: 3
+                      maximum: 5
+                      example: 4.4
+                    isVerified:
+                      type: boolean
+                      example: true
+                    isOnline:
+                      type: boolean
+                      example: false
+                    ownerName:
+                      type: string
+                      example: Daniel Mutua
+                    phone:
+                      type: string
+                      example: "0718045704"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /vendors/locations:
+    get:
+      tags:
+        - SkillsBridge
+      summary: Get vendor locations
+      description: >
+        SkillsBridge needs to read each water vendor's station name and
+        primary target estate in order to suggest those vendor locations
+        as physical meetup venues for skill sessions. Pass the optional
+        estate parameter to get only the vendors in one estate.
+      parameters:
+        - name: estate
+          in: query
+          required: false
+          description: >
+            Only return vendors in this estate (e.g. Kasarani). Must match the
+            estate name exactly as Maji spells it; capitalisation is ignored.
+            Omit it to return all vendors. An estate with no vendors returns
+            an empty array.
+          schema:
+            type: string
+          example: Kasarani
+      responses:
+        '200':
+          description: Water vendor station names and primary target estates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - vendorId
+                    - businessName
+                    - estate
+                  properties:
+                    vendorId:
+                      type: integer
+                      example: 1
+                    businessName:
+                      type: string
+                      example: Chemchemi Fresh Water Co.
+                    estate:
+                      type: string
+                      example: Kasarani
+        '400':
+          description: The estate parameter was provided but is empty.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  error:
+                    type: string
+                    example: estate must be a non-empty string
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  responses:
+    ServerError:
+      description: The server could not read from the database.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - error
+            properties:
+              error:
+                type: string
+                example: Failed to fetch vendor locations

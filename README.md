@@ -373,8 +373,8 @@ Allows a farmer to submit a consultation booking request for a verified expert.
 
 ---
 
-### 7. Discover Vendor Water Stations (Maji Logistics Proxy)
-Proxies upstream water station availability from Maji Website. (Requires logged-in session token).
+### 7. Discover Water Vendors (Maji Logistics Proxy)
+Proxies Maji Website's vendor locations (their `GET /api/vendors/locations`). (Requires logged-in session token.) The estate name must match Maji's spelling, for example `Kasarani` or `Lang'ata`; capital letters are ignored.
 
 * **Request:**
   ```bash
@@ -388,9 +388,39 @@ Proxies upstream water station availability from Maji Website. (Requires logged-
     "source": "mock",
     "stations": [
       {
-        "vendorId": "ven_201",
-        "stationName": "Kileleshwa Vendor Point",
-        "targetEstateId": "est_1029"
+        "vendorId": 2,
+        "businessName": "Kileleshwa Fresh Water",
+        "estate": "Kileleshwa"
+      }
+    ]
+  }
+  ```
+
+---
+
+### 8. List Maji's Water Vendors (Maji Logistics Proxy)
+Proxies Maji Website's `GET /api/vendors/all`: every water vendor, with rating and contact details. Optional `?estate=` (Maji's spelling, capitals ignored). Needs both the API key and a logged-in student token, because it includes phone numbers.
+
+* **Request:**
+  ```bash
+  curl -s "http://localhost:3001/api/logistics/vendors/all?estate=Kasarani" \
+    -H "X-API-Key: <your-api-key>" \
+    -H "Authorization: Bearer <token>"
+  ```
+* **Response (`200 OK`)** (mock data shown; `source` is `live` when connected to Maji):
+  ```json
+  {
+    "source": "mock",
+    "vendors": [
+      {
+        "vendorId": 1,
+        "businessName": "Chemchemi Fresh Water Co.",
+        "estate": "Kasarani",
+        "rating": 4.2,
+        "isVerified": true,
+        "isOnline": true,
+        "ownerName": "Mock Owner One",
+        "phone": "0700000001"
       }
     ]
   }

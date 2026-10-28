@@ -98,4 +98,9 @@ export const api = {
   // doesn't exist upstream. See CONTRACT_QUESTIONS.md.
   getStations: (estate) =>
     request(`/logistics/stations${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`),
+  getAllVendors: (estate) =>
+    request(`/logistics/vendors/all${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`),
+  getTopRatedVendors: () => request("/logistics/vendors/top-rated"),
+  getEstates: (deliveryStatus) =>
+    request(`/logistics/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`),
 };

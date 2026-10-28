@@ -17,6 +17,8 @@ import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import {
   getStations,
+  getTopRatedVendors,
+  getAllVendors,
   getEstates,
   getDelivery,
   createDelivery,
@@ -29,9 +31,34 @@ const router = Router();
 // behind login so anonymous traffic can't burn Maji's quota or spam it.
 router.use(requireAuth);
 
+// Vendor locations from Maji (their GET /api/vendors/locations). ?estate= is
+// optional; if you send it, it must not be blank (Maji answers 400 to that).
 router.get("/stations", async (req, res, next) => {
+  const { estate } = req.query;
+  if (estate !== undefined && (typeof estate !== "string" || !estate.trim())) {
+    return res.status(400).json({ error: "estate must be a non-empty string" });
+  }
   try {
-    res.json(await getStations(req.query.estate));
+    res.json(await getStations(estate));
+  } catch (err) { next(err); }
+});
+
+// Every Maji vendor, with contact details (Maji's GET /api/vendors/all).
+// ?estate= is optional but must not be blank. Needs a student login (router-level).
+router.get("/vendors/all", async (req, res, next) => {
+  const { estate } = req.query;
+  if (estate !== undefined && (typeof estate !== "string" || !estate.trim())) {
+    return res.status(400).json({ error: "estate must be a non-empty string" });
+  }
+  try {
+    res.json(await getAllVendors(estate));
+  } catch (err) { next(err); }
+});
+
+// Highest-rated verified vendor in each estate (Maji's GET /api/vendors/top-rated).
+router.get("/vendors/top-rated", async (req, res, next) => {
+  try {
+    res.json(await getTopRatedVendors());
   } catch (err) { next(err); }
 });
 

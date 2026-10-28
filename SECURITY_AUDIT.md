@@ -2,7 +2,7 @@
 
 Project: SkillBridge API. Date: 26 October 2026.
 
-This covers the three jobs from the lab: know who is calling (API keys), limit how much one caller can do (rate limiting), and check what responses give away (data exposure). The audit read the code behind every route and then pinned each finding down with automated tests (`__tests__/apikey.test.js`, `ratelimit.test.js`, `security.test.js`). The whole suite passes: 342 tests in 13 suites.
+This covers the three jobs from the lab: know who is calling (API keys), limit how much one caller can do (rate limiting), and check what responses give away (data exposure). The audit read the code behind every route and then pinned each finding down with automated tests (`__tests__/apikey.test.js`, `ratelimit.test.js`, `security.test.js`). The whole suite passes: 371 tests in 13 suites.
 
 ## 1. Who calls the API, and their keys (Part A)
 
@@ -19,7 +19,8 @@ Maji Website is not a consumer: we call them, they do not call us.
 How it works:
 * The caller sends `X-API-Key: <key>` on every request. The check (`server/middleware/apiKey.js`) is registered before every route and before the body parser, so no handler runs without a valid key.
 * Keys live only in environment variables (a local `.env`, or Render's Environment tab). `.env` is in `.gitignore`; `.env.example` holds placeholders only.
-* **Rule: every endpoint requires a key.** The only exceptions are `GET /api/health` and the published documentation (`/docs`, `/api-docs`, `/openapi.yaml`). Justification: the health check is what a host's uptime monitor calls and it returns only `{"status":"ok"}`; the docs are static pages with no user data, and a stranger needs them to learn how to ask for a key in the first place. Browser CORS preflights (`OPTIONS`) are answered without a key because browsers cannot attach one; they carry no data.
+* **Rule: every endpoint requires a key.** The only exceptions are `GET /api/health` and the published documentation (`/docs`, `/api-docs`, `/swagger`, `/test`, `/openapi.yaml`). Justification: the health check is what a host's uptime monitor calls and it returns only `{"status":"ok"}`; the docs are static pages with no user data, and a stranger needs them to learn how to ask for a key in the first place. Browser CORS preflights (`OPTIONS`) are answered without a key because browsers cannot attach one; they carry no data.
+* The root aliases AgroConnect uses (`/experts`, `/skills`, `/requests`) are registered after the key check, so they need a key exactly like the `/api` versions (pinned by tests in `__tests__/apikey.test.js`).
 * A missing or wrong key returns `401 {"error":"Missing or invalid API key"}`. The two cases are deliberately identical.
 * The check is constant-time (both sides hashed, then compared with `crypto.timingSafeEqual`) and fails closed: with no keys configured, everything is rejected.
 * Status codes: `401` = "I do not know who you are" (bad key, or no login). `403` = "I know who you are and you may not do this" (a student on an admin route, or on someone else's session or request).
@@ -66,6 +67,7 @@ Retry-After: 60
   * **Fix:** added a `user_id` owner column (with a migration for existing databases; old rows with no recorded owner are assigned to user 1, the demo account that owns the seed sessions). `GET` now returns only your sessions, new sessions take the owner from the login token (never the body), and `PATCH` on someone else's session returns `403` (`404` if it does not exist). The expert availability endpoint still treats a slot booked by anyone as taken, but reads only the date and time, never who booked it.
 * **Checked, already correct:** requests are limited to the sender or recipient (`403` otherwise, fixed in Week 7); profile and `/auth/me` come from the token, not an id in the URL; admin routes return `403` to students.
 * **Accepted:** `GET /api/users/:id` is a public directory entry by design (name, skills, rating, estate).
+* **Accepted, vendor contact details:** `GET /api/logistics/vendors/all` returns each Maji vendor's owner name and phone number, so students can reach a vendor who is meant to teach them. It needs the API key and a student login. The top-rated route drops these fields.
 
 ### Error messages: stack traces, file paths, queries or table names?
 * **Looked at:** the global error handler, plus real error responses: malformed JSON, oversized bodies, duplicate signup, SQL-looking input, unknown routes.
@@ -105,7 +107,7 @@ Retry-After: 60
 
 ## 5. Tests
 
-`npm test` passes: 13 suites, 342 tests (the 272 from Week 7 plus 70 new). New tests cover: no key gets `401` on 13 endpoints including login and unknown paths; a wrong key gets `401` in 7 variations; every valid consumer key gets `200`; the real `429` with `Retry-After`; limits are per key; and each audit finding above. Several were checked by deliberately breaking the code (removing the key check, the limiter, the session ownership check, and the error masking) and confirming the tests fail.
+`npm test` passes: 13 suites, 371 tests (the 272 from Week 7 plus 99 added since: 70 in Week 9, 2 for the Swagger page and root alias, 27 for the root-alias key checks and the Maji vendor endpoints). New tests cover: no key gets `401` on 13 endpoints including login and unknown paths; a wrong key gets `401` in 7 variations; every valid consumer key gets `200`; the real `429` with `Retry-After`; limits are per key; and each audit finding above. Several were checked by deliberately breaking the code (removing the key check, the limiter, the session ownership check, and the error masking) and confirming the tests fail.
 
 ## 6. Deployment note
 

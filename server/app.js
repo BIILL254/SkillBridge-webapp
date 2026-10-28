@@ -65,6 +65,12 @@ app.use("/api-docs", express.static(docsPath));
 app.get("/openapi.yaml", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "openapi.yaml"));
 });
+// Interactive Swagger UI for consumers (AgroConnect) to try the API. It is the
+// same static docs page as /docs/swagger.html: no data, and you still need a
+// key to actually send a request from it.
+app.get(["/swagger", "/test"], (req, res) => {
+  res.sendFile(path.join(docsPath, "swagger.html"));
+});
 
 // ---- Everything below requires a valid X-API-Key ---------------------------
 // Registered BEFORE the routes (and before the body parser), so a request with
@@ -93,6 +99,13 @@ app.use("/api/skills", skillsRouter);
 
 // Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
 app.use("/api/logistics", logisticsRouter);
+
+// Root aliases for AgroConnect, so both /api/experts and /experts work as
+// documented in ENDPOINT_LIST.md. They are registered AFTER the key check and
+// rate limit above, so they need an X-API-Key exactly like the /api versions.
+app.use("/experts", expertsRouter);
+app.use("/skills", skillsRouter);
+app.use("/requests", requestsRouter);
 
 // catch-all for unmatched API routes
 app.use("/api", (req, res) => {

@@ -378,7 +378,7 @@ export default function App() {
           list={discoverList}
           myOffers={myOffers} myWants={myWants}
           activeTag={activeTag} setTag={setTag}
-          sentSet={sentSet} onRequest={openReqModal}
+          sentSet={sentSet} onRequest={openReqModal} estate={user.estate}
         />
       )}
       {page === "profile" && (

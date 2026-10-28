@@ -13,24 +13,168 @@ describe("logistics proxy requires login", () => {
 });
 
 describe("GET /api/logistics/stations (mock mode in tests)", () => {
-  it("returns stations in Maji's real shape, labelled as mock data", async () => {
+  it("returns vendors in Maji's current shape (vendorId, businessName, estate), labelled as mock data", async () => {
     const res = await request(app).get("/api/logistics/stations").set(auth(token));
     expect(res.status).toBe(200);
     expect(res.body.source).toBe("mock");
     expect(res.body.stations.length).toBeGreaterThan(0);
-    expect(res.body.stations[0]).toEqual({ vendorId: expect.any(String), stationName: expect.any(String), targetEstateId: expect.any(String) });
+    expect(res.body.stations[0]).toEqual({ vendorId: expect.any(Number), businessName: expect.any(String), estate: expect.any(String) });
   });
 
   it("filters to one estate", async () => {
     const res = await request(app).get("/api/logistics/stations?estate=Kileleshwa").set(auth(token));
     expect(res.body.stations.length).toBe(1);
-    expect(res.body.stations[0].stationName).toMatch(/Kileleshwa/);
+    expect(res.body.stations[0]).toMatchObject({ businessName: "Kileleshwa Fresh Water", estate: "Kileleshwa" });
   });
 
-  it("edge case: an estate with no stations gives an empty list, not an error", async () => {
+  it("accepts our own 'Estate, Nairobi' spelling and ignores capitals", async () => {
+    const res = await request(app).get("/api/logistics/stations?estate=" + encodeURIComponent("KILELESHWA, Nairobi")).set(auth(token));
+    expect(res.body.stations.map((s) => s.estate)).toEqual(["Kileleshwa"]);
+  });
+
+  it("edge case: an estate with no vendors gives an empty list, not an error", async () => {
     const res = await request(app).get("/api/logistics/stations?estate=Atlantis").set(auth(token));
     expect(res.status).toBe(200);
     expect(res.body.stations).toEqual([]);
+  });
+
+  it.each([["empty", ""], ["blank", "%20%20"]])("rejects a %s estate with 400 (Maji does the same)", async (_l, value) => {
+    const res = await request(app).get(`/api/logistics/stations?estate=${value}`).set(auth(token));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/estate/);
+  });
+});
+
+describe("GET /api/logistics/vendors/top-rated (mock mode in tests)", () => {
+  it("requires login", async () => {
+    expect((await request(app).get("/api/logistics/vendors/top-rated")).status).toBe(401);
+  });
+
+  it("returns top-rated vendors and never includes owner name or phone", async () => {
+    const res = await request(app).get("/api/logistics/vendors/top-rated").set(auth(token));
+    expect(res.status).toBe(200);
+    expect(res.body.source).toBe("mock");
+    expect(res.body.vendors.length).toBeGreaterThan(0);
+    for (const v of res.body.vendors) {
+      expect(Object.keys(v).sort()).toEqual(["businessName", "estate", "isOnline", "isVerified", "rating", "vendorId"]);
+      expect(v.rating).toBeGreaterThanOrEqual(3);
+      expect(v.rating).toBeLessThanOrEqual(5);
+    }
+  });
+});
+
+describe("GET /api/logistics/vendors/all (mock mode in tests)", () => {
+  it("requires login", async () => {
+    expect((await request(app).get("/api/logistics/vendors/all")).status).toBe(401);
+  });
+
+  it("returns every vendor with rating and contact details, labelled as mock data", async () => {
+    const res = await request(app).get("/api/logistics/vendors/all").set(auth(token));
+    expect(res.status).toBe(200);
+    expect(res.body.source).toBe("mock");
+    expect(res.body.vendors.length).toBeGreaterThan(1);
+    for (const v of res.body.vendors) {
+      expect(Object.keys(v).sort()).toEqual(["businessName", "estate", "isOnline", "isVerified", "ownerName", "phone", "rating", "vendorId"]);
+    }
+  });
+
+  it("filters by estate, accepting 'Estate, Nairobi' and ignoring capitals", async () => {
+    const res = await request(app).get("/api/logistics/vendors/all?estate=" + encodeURIComponent("WESTLANDS, Nairobi")).set(auth(token));
+    expect(res.body.vendors.map((v) => v.estate)).toEqual(["Westlands"]);
+  });
+
+  it("an estate with no vendors gives [] (not an error)", async () => {
+    const res = await request(app).get("/api/logistics/vendors/all?estate=Atlantis").set(auth(token));
+    expect(res.status).toBe(200);
+    expect(res.body.vendors).toEqual([]);
+  });
+
+  it("rejects a blank estate with 400", async () => {
+    const res = await request(app).get("/api/logistics/vendors/all?estate=").set(auth(token));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/estate/);
+  });
+});
+
+// LIVE mode, with Maji's server faked: checks the exact URL we call on Maji
+// (their CURRENT paths) and how we map their answer. Nothing touches the network.
+describe("live mode against a faked Maji Website", () => {
+  const realFetch = global.fetch;
+  let calls;
+  const fakeMaji = (handler) => {
+    calls = [];
+    global.fetch = async (url, opts) => {
+      calls.push(String(url));
+      const { status = 200, body } = handler(String(url), opts);
+      return { ok: status >= 200 && status < 300, status, json: async () => body };
+    };
+  };
+  beforeEach(() => { process.env.MAJI_API_BASE_URL = "https://maji.example.test/"; });
+  afterEach(() => { global.fetch = realFetch; process.env.MAJI_API_BASE_URL = ""; });
+
+  it("stations: calls /api/vendors/locations?estate=<Maji spelling> and maps the fields", async () => {
+    fakeMaji(() => ({ body: [{ vendorId: 9, businessName: "Chemchemi Fresh Water Co.", estate: "Kasarani", secret: "do not pass on" }] }));
+    const res = await request(app).get("/api/logistics/stations?estate=" + encodeURIComponent("Kasarani, Nairobi")).set(auth(token));
+    expect(res.status).toBe(200);
+    expect(calls).toEqual(["https://maji.example.test/api/vendors/locations?estate=Kasarani"]);
+    expect(res.body).toEqual({ source: "live", stations: [{ vendorId: 9, businessName: "Chemchemi Fresh Water Co.", estate: "Kasarani" }] });
+  });
+
+  it("stations without an estate calls the plain path (all vendors)", async () => {
+    fakeMaji(() => ({ body: [] }));
+    await request(app).get("/api/logistics/stations").set(auth(token));
+    expect(calls).toEqual(["https://maji.example.test/api/vendors/locations"]);
+  });
+
+  it("top-rated: calls /api/vendors/top-rated and strips ownerName and phone", async () => {
+    fakeMaji(() => ({ body: [{ vendorId: 17, businessName: "AquaFresh Nairobi", estate: "Dagoretti", rating: 4.4, isVerified: true, isOnline: false, ownerName: "Daniel Mutua", phone: "0718045704" }] }));
+    const res = await request(app).get("/api/logistics/vendors/top-rated").set(auth(token));
+    expect(calls).toEqual(["https://maji.example.test/api/vendors/top-rated"]);
+    expect(res.body.source).toBe("live");
+    expect(res.body.vendors[0]).toEqual({ vendorId: 17, businessName: "AquaFresh Nairobi", estate: "Dagoretti", rating: 4.4, isVerified: true, isOnline: false });
+    expect(JSON.stringify(res.body)).not.toMatch(/0718045704|Daniel/);
+  });
+
+  it("vendors/all: calls /api/vendors/all?estate=<Maji spelling> and maps only the known fields", async () => {
+    fakeMaji(() => ({ body: [{ vendorId: 3, businessName: "Chemchemi", estate: "Kasarani", rating: 4.1, isVerified: true, isOnline: false, ownerName: "A. Owner", phone: "0711111111", internalNote: "never pass on" }] }));
+    const res = await request(app).get("/api/logistics/vendors/all?estate=" + encodeURIComponent("Kasarani, Nairobi")).set(auth(token));
+    expect(calls).toEqual(["https://maji.example.test/api/vendors/all?estate=Kasarani"]);
+    expect(res.body).toEqual({ source: "live", vendors: [{ vendorId: 3, businessName: "Chemchemi", estate: "Kasarani", rating: 4.1, isVerified: true, isOnline: false, ownerName: "A. Owner", phone: "0711111111" }] });
+  });
+
+  it("vendors/all without an estate calls the plain path", async () => {
+    fakeMaji(() => ({ body: [] }));
+    await request(app).get("/api/logistics/vendors/all").set(auth(token));
+    expect(calls).toEqual(["https://maji.example.test/api/vendors/all"]);
+  });
+
+  it("vendors/all: an upstream 400 from Maji is passed on as 400, a non-array answer is a 502", async () => {
+    fakeMaji(() => ({ status: 400, body: { error: "estate must be a non-empty string" } }));
+    expect((await request(app).get("/api/logistics/vendors/all").set(auth(token))).status).toBe(400);
+    fakeMaji(() => ({ body: { nope: true } }));
+    expect((await request(app).get("/api/logistics/vendors/all").set(auth(token))).status).toBe(502);
+  });
+
+  it("an upstream 404 (endpoint not deployed on Maji yet) becomes a 502, not a confusing 404 from us", async () => {
+    fakeMaji(() => ({ status: 404, body: undefined }));
+    // Maji's real 404 body is an HTML page, so .json() fails; mimic that
+    global.fetch = async () => ({ ok: false, status: 404, json: async () => { throw new Error("not json"); } });
+    const res = await request(app).get("/api/logistics/vendors/all").set(auth(token));
+    expect(res.status).toBe(502);
+    expect(res.body.error).toMatch(/404/);
+  });
+
+  it("an upstream 500 becomes a 502 from us, with Maji's message and no stack", async () => {
+    fakeMaji(() => ({ status: 500, body: { error: "Failed to fetch vendor locations" } }));
+    const res = await request(app).get("/api/logistics/stations").set(auth(token));
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({ error: "Failed to fetch vendor locations" });
+  });
+
+  it("a non-array answer from Maji is a 502, not a crash", async () => {
+    fakeMaji(() => ({ body: { oops: true } }));
+    const res = await request(app).get("/api/logistics/vendors/top-rated").set(auth(token));
+    expect(res.status).toBe(502);
   });
 });
 

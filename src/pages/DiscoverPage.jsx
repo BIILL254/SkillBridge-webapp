@@ -4,8 +4,9 @@ import { calcMatch } from "../utils.js";
 import Avatar from "../components/Avatar.jsx";
 import SkillTag from "../components/SkillTag.jsx";
 import MatchBar from "../components/MatchBar.jsx";
+import WaterVendorsCard from "../components/WaterVendorsCard.jsx";
 
-export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTag, sentSet, onRequest }) {
+export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTag, sentSet, onRequest, estate }) {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [mutualOnly, setMutualOnly] = useState(false);
   const [sortBy, setSortBy] = useState("compat");
@@ -55,6 +56,14 @@ export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTa
           </button>
         ))}
       </div>
+
+      {/* Water filters: also show real water vendors from Maji Website, so the
+          experts and the vendors in your estate are side by side */}
+      {(activeTag === "Water Sales" || activeTag === "Water Treatment") && (
+        <div className="mb-6 max-w-md">
+          <WaterVendorsCard estate={estate} topic={activeTag} />
+        </div>
+      )}
 
       {/* Advanced sorting & status filtering controls bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 bg-[var(--sb-surface-alt)] border border-[var(--sb-border)] p-3 rounded-2xl">
