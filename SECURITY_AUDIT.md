@@ -17,6 +17,7 @@ Each consumer has its own key, so one can be revoked without breaking the others
 Maji Website is not a consumer: we call them, they do not call us.
 
 How it works:
+
 * The caller sends `X-API-Key: <key>` on every request. The check (`server/middleware/apiKey.js`) is registered before every route and before the body parser, so no handler runs without a valid key.
 * Keys live only in environment variables (a local `.env`, or Render's Environment tab). `.env` is in `.gitignore`; `.env.example` holds placeholders only.
 * **Rule: every endpoint requires a key.** The only exceptions are `GET /api/health` and the published documentation (`/docs`, `/api-docs`, `/swagger`, `/test`, `/openapi.yaml`). Justification: the health check is what a host's uptime monitor calls and it returns only `{"status":"ok"}`; the docs are static pages with no user data, and a stranger needs them to learn how to ask for a key in the first place. Browser CORS preflights (`OPTIONS`) are answered without a key because browsers cannot attach one; they carry no data.
@@ -57,11 +58,13 @@ Retry-After: 60
 ## 3. Self-audit checklist (Part D)
 
 ### Sensitive fields: any password hash, token, internal flag or email a consumer should not see?
+
 * **Looked at:** every response builder: `toSafeUser`, `getUsers`, `toExpert`, `getExpertReviews`, the admin user list, `getProfile`, the auth routes. All use explicit field lists, never raw database rows.
 * **Found:** nothing wrong. No password hash, token or `password_hash` column appears in any response; a test scans every readable endpoint for them. A login token is only returned to the person who just logged in or signed up. Public listings (`/api/users`, `/api/experts`) contain no phone numbers, usernames or roles. Phone and username appear only in a user's own account and in the admin list, which needs them.
 * **Accepted:** the expert listing includes the latitude and longitude of the person's estate (an area centre, not a home address). The contract needs it for sort-by-proximity.
 
 ### Other people's data: can a caller read or change records that are not theirs by changing an id?
+
 * **Looked at:** every route that takes an id or returns a list: requests, sessions, profile, users, admin.
 * **Found, and fixed:** `GET /api/sessions` returned **every user's sessions** to any logged-in user, and `PATCH /api/sessions/:id` let any logged-in user mark anyone's session as reviewed. The sessions table had no owner.
   * **Fix:** added a `user_id` owner column (with a migration for existing databases; old rows with no recorded owner are assigned to user 1, the demo account that owns the seed sessions). `GET` now returns only your sessions, new sessions take the owner from the login token (never the body), and `PATCH` on someone else's session returns `403` (`404` if it does not exist). The expert availability endpoint still treats a slot booked by anyone as taken, but reads only the date and time, never who booked it.
@@ -70,24 +73,29 @@ Retry-After: 60
 * **Accepted, vendor contact details:** `GET /api/logistics/vendors/all` returns each Maji vendor's owner name and phone number, so students can reach a vendor who is meant to teach them. It needs the API key and a student login. The top-rated route drops these fields.
 
 ### Error messages: stack traces, file paths, queries or table names?
+
 * **Looked at:** the global error handler, plus real error responses: malformed JSON, oversized bodies, duplicate signup, SQL-looking input, unknown routes.
 * **Found, and fixed:** the global handler returned `err.message` for every error, so an unexpected database failure would have sent text like `UNIQUE constraint failed: users.username` to the client. Now an error the code raised on purpose (it sets a status, for example "That username is already taken") keeps its message; anything unexpected is logged on the server and the client gets `500 {"error":"Something went wrong"}`. JSON parse errors now return a fixed `"Request body is not valid JSON"` instead of the parser's internals, oversized bodies return `413`, and the `X-Powered-By: Express` header is removed.
 * **Checked:** SQL-looking input in login, skills and experts filters is treated as plain data (all queries are parameterised); the users table survives a `DROP TABLE` attempt.
 
 ### Write endpoints: can a caller send an extra field such as `isAdmin` or `id` and have it saved?
+
 * **Looked at:** signup, admin create and edit, profile edit, requests, sessions, coins.
 * **Found, nothing wrong:** each handler picks named fields only (or a whitelist, for profile and admin edits), so `role`, `id`, `rating`, `coins`, `fromId`, `status` and `userId` in a body are ignored. Pinned by tests: a signup that sends `role: "admin"` produces a normal user with 5 welcome coins.
 * **Found, and fixed:** `PATCH /api/profile/coins` accepted any number, so any logged-in user could give themselves a million coins in one request. It now accepts whole numbers of at most 10 per call (the app never awards more than 2), and `reason` must be a string of at most 120 characters. Overdrawing is still refused as before.
 * **Still open (honest limitation):** the frontend, not the server, decides when coins are awarded, so a user can still call the endpoint repeatedly (slowed by the rate limit). The proper fix is to award coins on the server when a request is accepted or a session is reviewed. This builds on the non-idempotent coin endpoint already recorded in `src/documentation/CONTRACT_DEVIATIONS.md`.
 
 ### Keys in the wrong place: committed, logged, or in the README?
+
 * **Looked at:** a scan of the whole working tree for long key-like strings and the words key, secret and password; every `console.*` call in `server/`.
 * **Found:** no real key anywhere in the source, `.env.example`, `render.yaml`, README or docs (all use placeholders such as `<your-api-key>`). `.env` is in `.gitignore`. Nothing logs a key or token; the only related log line is a startup warning when no keys are configured, and it prints no values.
 * **Git history:** this audit could only inspect the working files, not the repository history. Before pushing, run these two commands; both should print nothing:
+
   ```bash
   git log --all --oneline -- .env
   git log --all -p -S"WEB_API_KEY=" -- . ":(exclude).env.example" ":(exclude)README.md" ":(exclude)render.yaml" ":(exclude)SECURITY_AUDIT.md"
   ```
+
 * **By design:** `VITE_API_KEY` is visible to anyone who opens the website's JavaScript. That is why the web key identifies our app and is rate limited per visitor, while student data is protected by the login.
 * **Known weak spot:** seeded demo accounts use the password `1234` (the admin uses the `ADMIN_PASSWORD` environment variable). Every account is forced to change it at first login, and logins are limited to 10 attempts per 15 minutes per IP, but a public deployment should set `ADMIN_PASSWORD` and `SEED_PASSWORD`.
 
