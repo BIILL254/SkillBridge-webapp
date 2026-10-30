@@ -252,6 +252,12 @@ if (!columnExists("users", "username")) {
 if (!columnExists("users", "must_change_password")) {
   db.exec(`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0;`);
 }
+// Requests to a Maji vendor (not a SkillBridge user): the vendor's id and name
+// at Maji. to_id stays NULL for these, since a vendor has no SkillBridge account.
+if (!columnExists("requests", "vendor_id")) {
+  db.exec(`ALTER TABLE requests ADD COLUMN vendor_id INTEGER;`);
+  db.exec(`ALTER TABLE requests ADD COLUMN vendor_name TEXT;`);
+}
 
 seed();
 
@@ -590,33 +596,53 @@ export async function getSkillsByCategory(tag) {
 // Requests / sessions / profile
 // ---------------------------------------------------------------------------
 // Only the requests the given user is part of (as sender or recipient).
+const REQUEST_COLUMNS = `
+    id, from_id AS fromId, to_id AS toId, offer, want, type,
+    msg, time_text AS time, status,
+    vendor_id AS vendorId, vendor_name AS vendorName`;
+
+// vendorId/vendorName only appear on requests sent to a Maji vendor. Ordinary
+// student-to-student requests keep exactly the shape they always had.
+function shapeRequest(row) {
+  if (!row) return null;
+  if (row.vendorId == null) {
+    const { vendorId, vendorName, ...plain } = row;
+    return plain;
+  }
+  return row;
+}
+
 export async function getRequests(userId) {
   return db.prepare(`
-    SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
-           msg, time_text AS time, status
+    SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE from_id = ? OR to_id = ? ORDER BY id
-  `).all(userId, userId);
+  `).all(userId, userId).map(shapeRequest);
 }
 
 export async function getRequestById(id) {
-  return db.prepare(`
-    SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
-           msg, time_text AS time, status
+  return shapeRequest(db.prepare(`
+    SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(id) || null;
+  `).get(id));
 }
 
-export async function addRequest({ fromId, toId, offer, want, type, msg }) {
+export async function addRequest({ fromId, toId, offer, want, type, msg, vendorId, vendorName }) {
+  const isVendor = vendorId != null;
   const result = db.prepare(`
-    INSERT INTO requests (from_id, to_id, offer, want, type, msg, time_text, status)
-    VALUES (?, ?, ?, ?, ?, ?, 'Just now', 'sent')
-  `).run(fromId ?? null, toId ?? fromId ?? null, offer ?? null, want, type, msg);
+    INSERT INTO requests (from_id, to_id, offer, want, type, msg, time_text, status, vendor_id, vendor_name)
+    VALUES (?, ?, ?, ?, ?, ?, 'Just now', 'sent', ?, ?)
+  `).run(
+    fromId ?? null,
+    isVendor ? null : (toId ?? fromId ?? null),
+    offer ?? null, want, type, msg,
+    isVendor ? vendorId : null,
+    isVendor ? vendorName : null,
+  );
 
-  return db.prepare(`
-    SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
-           msg, time_text AS time, status
+  return shapeRequest(db.prepare(`
+    SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(result.lastInsertRowid);
+  `).get(result.lastInsertRowid));
 }
 
 export async function addConsultationRequest({ farmerName, topic, expertId, date }) {
@@ -627,11 +653,10 @@ export async function addConsultationRequest({ farmerName, topic, expertId, date
 export async function updateRequestStatus(id, status) {
   const result = db.prepare("UPDATE requests SET status = ? WHERE id = ?").run(status, id);
   if (!result.changes) return null;
-  return db.prepare(`
-    SELECT id, from_id AS fromId, to_id AS toId, offer, want, type,
-           msg, time_text AS time, status
+  return shapeRequest(db.prepare(`
+    SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(id);
+  `).get(id));
 }
 
 export async function removeRequest(id) {
