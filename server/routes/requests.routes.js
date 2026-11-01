@@ -50,7 +50,7 @@ router.post("/", asyncHandler(async (req, res) => {
     return res.status(401).json({ error: "Not logged in" });
   }
 
-  const { toId, offer, want, type, msg } = req.body;
+  const { toId, offer, want, type, msg, vendorId, vendorName } = req.body;
 
   if (!msg || !want || !type) {
     return res.status(400).json({ error: "msg, want, and type are required" });
@@ -64,11 +64,27 @@ router.post("/", asyncHandler(async (req, res) => {
   if (!["swap", "coin"].includes(type)) {
     return res.status(400).json({ error: "type must be 'swap' or 'coin' (use expertId for a consultation booking)" });
   }
-  if (toId !== undefined && toId !== null && !(await getUserById(toId))) {
+  // A request can go to a SkillBridge user (toId) or to a Maji vendor
+  // (vendorId + vendorName), never both. Vendors have no SkillBridge account.
+  const isVendorRequest = vendorId !== undefined && vendorId !== null;
+  if (isVendorRequest) {
+    if (toId !== undefined && toId !== null) {
+      return res.status(400).json({ error: "Send either toId (a SkillBridge user) or vendorId (a Maji vendor), not both" });
+    }
+    if (!Number.isInteger(vendorId) || vendorId < 1) {
+      return res.status(400).json({ error: "vendorId must be a positive integer" });
+    }
+    if (typeof vendorName !== "string" || !vendorName.trim() || vendorName.length > 120) {
+      return res.status(400).json({ error: "vendorName is required (a non-empty string of at most 120 characters)" });
+    }
+  } else if (toId !== undefined && toId !== null && !(await getUserById(toId))) {
     return res.status(400).json({ error: "toId does not match any SkillBridge user" });
   }
 
-  const newRequest = await addRequest({ fromId: user.id, toId, offer, want, type, msg });
+  const newRequest = await addRequest({
+    fromId: user.id, toId, offer, want, type, msg,
+    ...(isVendorRequest ? { vendorId, vendorName: vendorName.trim() } : {}),
+  });
   res.status(201).json(newRequest);
 }));
 

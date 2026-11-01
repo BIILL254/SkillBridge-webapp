@@ -6,6 +6,9 @@ Built with **React 18**, **Express 4**, and **SQLite (better-sqlite3)**.
 
 ---
 
+Site link- https://skillbridge-web-020v.onrender.com
+API link- https://skillbridge-api-p6s9.onrender.com
+
 ## Quickstart — Make a Real API Call in 10 Seconds
 
 Every request needs an API key in an `X-API-Key` header (see [Authentication](#authentication-and-rate-limiting)). With the API running and your key in hand, this one command returns real JSON:

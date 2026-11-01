@@ -47,8 +47,13 @@ function RequestCard({ req, users, onAccept, onDecline, declining, currentUserId
   // regardless of whether this is an incoming or a sent request, now that
   // fromId/toId carry real sender/recipient meaning instead of both being
   // set to the same value.
+  // A request to a Maji vendor has no SkillBridge user on the other side, so
+  // build a display object from the vendor name saved on the request.
+  const isVendor = req.vendorId != null;
   const userId = req.fromId === currentUserId ? req.toId : req.fromId;
-  const user = users.find((u) => u.id === userId);
+  const user = isVendor
+    ? { name: req.vendorName, initials: String(req.vendorName || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() }
+    : users.find((u) => u.id === userId);
   if (!user) return null;
 
   const isIncoming = req.status === "incoming";
@@ -63,7 +68,11 @@ function RequestCard({ req, users, onAccept, onDecline, declining, currentUserId
       <Avatar name={user.name} initials={user.initials} />
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm mb-0.5">{user.name}</div>
-        <div className="text-xs text-[var(--sb-text-tertiary)] mb-2.5">{user.dept} · ★ {user.rating} ({user.reviews} reviews)</div>
+        <div className="text-xs text-[var(--sb-text-tertiary)] mb-2.5">
+          {isVendor
+            ? "Maji vendor · they can't reply in SkillBridge, so follow up using the phone number on their card"
+            : `${user.dept} · ★ ${user.rating} (${user.reviews} reviews)`}
+        </div>
         <div className="flex items-center gap-2 flex-wrap mb-2.5">
           {isCoin ? (
             <>

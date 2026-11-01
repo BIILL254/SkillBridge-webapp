@@ -6,7 +6,7 @@ import SkillTag from "../components/SkillTag.jsx";
 import MatchBar from "../components/MatchBar.jsx";
 import WaterVendorsCard from "../components/WaterVendorsCard.jsx";
 
-export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTag, sentSet, onRequest, estate }) {
+export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTag, sentSet, onRequest, onRequestVendor, estate }) {
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [mutualOnly, setMutualOnly] = useState(false);
   const [sortBy, setSortBy] = useState("compat");
@@ -61,7 +61,7 @@ export default function DiscoverPage({ list, myOffers, myWants, activeTag, setTa
           experts and the vendors in your estate are side by side */}
       {(activeTag === "Water Sales" || activeTag === "Water Treatment") && (
         <div className="mb-6 max-w-md">
-          <WaterVendorsCard estate={estate} topic={activeTag} />
+          <WaterVendorsCard estate={estate} topic={activeTag} onRequest={onRequestVendor} sentSet={sentSet} />
         </div>
       )}
 

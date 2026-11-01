@@ -96,7 +96,8 @@ export default function App() {
         // rebuild "already sent" state from any request with status "sent" —
         // toId is the right field now that fromId is always the real
         // logged-in sender (see sendRequest below), not the target's id.
-        setSentSet(new Set(requestsData.filter((r) => r.status === "sent").map((r) => r.toId)));
+        // requests to a Maji vendor have no toId; they are keyed "v:<vendorId>"
+        setSentSet(new Set(requestsData.filter((r) => r.status === "sent").map((r) => (r.vendorId != null ? `v:${r.vendorId}` : r.toId))));
         if (usersData.length) setSessWith(usersData[0].name);
         setLoadError("");
       } catch (err) {
@@ -136,6 +137,22 @@ export default function App() {
   }
   function closeReqModal() { setReqModalOpen(false); setReqModalUser(null); }
 
+  // A Maji vendor isn't a SkillBridge user, so build a user-shaped object for
+  // the same request modal. "offers" is the topic the filter is on, so the
+  // "in exchange for" dropdown reads Water Sales / Water Treatment.
+  function openVendorReqModal(v) {
+    openReqModal({
+      id: `v:${v.vendorId}`,
+      isVendor: true,
+      vendorId: v.vendorId,
+      name: v.businessName,
+      initials: String(v.businessName || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+      rating: Number(v.rating ?? 0).toFixed(1),
+      reviews: 0,
+      offers: [activeTag || "Water Sales"],
+    });
+  }
+
   async function sendRequest() {
     if (!reqModalUser) return;
     const msg = reqMsg.trim();
@@ -154,9 +171,10 @@ export default function App() {
         showToast(`Request sent to ${reqModalUser.name} ✓`, "success");
       }
 
-      const newRequest = await api.createRequest({
-        toId: reqModalUser.id, offer, want, type: exchangeType, msg,
-      });
+      const payload = reqModalUser.isVendor
+        ? { vendorId: reqModalUser.vendorId, vendorName: reqModalUser.name, offer, want, type: exchangeType, msg }
+        : { toId: reqModalUser.id, offer, want, type: exchangeType, msg };
+      const newRequest = await api.createRequest(payload);
       setRequests((rs) => [...rs, newRequest]);
       setSentSet((s) => new Set(s).add(reqModalUser.id));
       closeReqModal();
@@ -378,7 +396,7 @@ export default function App() {
           list={discoverList}
           myOffers={myOffers} myWants={myWants}
           activeTag={activeTag} setTag={setTag}
-          sentSet={sentSet} onRequest={openReqModal} estate={user.estate}
+          sentSet={sentSet} onRequest={openReqModal} onRequestVendor={openVendorReqModal} estate={user.estate}
         />
       )}
       {page === "profile" && (

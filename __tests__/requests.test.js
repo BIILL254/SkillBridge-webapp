@@ -236,3 +236,100 @@ describe("DELETE /api/requests/:id", () => {
     expect(still).toBe(true);
   });
 });
+
+describe("POST /api/requests (request exchange to a Maji vendor)", () => {
+  const vendorReq = (over = {}) => ({
+    vendorId: 12, vendorName: "AquaFresh Nairobi", offer: "Python", want: "Water Treatment",
+    type: "swap", msg: "I can teach Python in exchange for a lesson on water treatment.", ...over,
+  });
+  let createdId;
+
+  it("creates a request to a vendor: 201, sender from my token, no SkillBridge recipient", async () => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token)).send(vendorReq());
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({
+      id: expect.any(Number), fromId: walter.user.id, toId: null,
+      offer: "Python", want: "Water Treatment", type: "swap",
+      msg: expect.any(String), time: expect.any(String), status: "sent",
+      vendorId: 12, vendorName: "AquaFresh Nairobi",
+    });
+    createdId = res.body.id;
+  });
+
+  it("the sender sees it in GET /api/requests with the vendor fields", async () => {
+    const res = await request(app).get("/api/requests").set(auth(walter.token));
+    expect(res.status).toBe(200);
+    const mine = res.body.find((r) => r.id === createdId);
+    expect(mine).toBeDefined();
+    expect(mine.vendorId).toBe(12);
+    expect(mine.vendorName).toBe("AquaFresh Nairobi");
+  });
+
+  it("nobody else sees it (a vendor request has no recipient on SkillBridge)", async () => {
+    const res = await request(app).get("/api/requests").set(auth(jess.token));
+    expect(res.status).toBe(200);
+    expect(res.body.find((r) => r.id === createdId)).toBeUndefined();
+  });
+
+  it("an ordinary student request still has no vendor fields (shape unchanged)", async () => {
+    const res = await request(app).post("/api/requests").set(auth(bill.token)).send(swap());
+    expect(res.status).toBe(201);
+    expect(res.body).not.toHaveProperty("vendorId");
+    expect(res.body).not.toHaveProperty("vendorName");
+  });
+
+  it("accepts a coin-type request to a vendor", async () => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token))
+      .send(vendorReq({ type: "coin", offer: undefined, vendorId: 13 }));
+    expect(res.status).toBe(201);
+    expect(res.body.type).toBe("coin");
+    expect(res.body.vendorId).toBe(13);
+  });
+
+  it("trims the vendor name before saving it", async () => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token))
+      .send(vendorReq({ vendorName: "  Padded Water Co.  ", vendorId: 14 }));
+    expect(res.status).toBe(201);
+    expect(res.body.vendorName).toBe("Padded Water Co.");
+  });
+
+  it("requires login (401)", async () => {
+    const res = await request(app).post("/api/requests").send(vendorReq());
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects sending both toId and vendorId (400)", async () => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token)).send(vendorReq({ toId: 2 }));
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it.each([
+    ["a string", "12"],
+    ["zero", 0],
+    ["negative", -4],
+    ["a decimal", 1.5],
+  ])("rejects a vendorId that is %s (400)", async (_label, vendorId) => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token)).send(vendorReq({ vendorId }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/vendorId/);
+  });
+
+  it.each([
+    ["missing", undefined],
+    ["blank", "   "],
+    ["not a string", 42],
+    ["over 120 characters", "x".repeat(121)],
+  ])("rejects a vendorName that is %s (400)", async (_label, vendorName) => {
+    const res = await request(app).post("/api/requests").set(auth(walter.token)).send(vendorReq({ vendorName }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/vendorName/);
+  });
+
+  it("a rejected vendor request saves nothing", async () => {
+    const before = (await request(app).get("/api/requests").set(auth(walter.token))).body.length;
+    await request(app).post("/api/requests").set(auth(walter.token)).send(vendorReq({ vendorName: "" }));
+    const after = (await request(app).get("/api/requests").set(auth(walter.token))).body.length;
+    expect(after).toBe(before);
+  });
+});
