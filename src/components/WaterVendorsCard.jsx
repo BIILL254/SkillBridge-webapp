@@ -7,27 +7,42 @@ import { api } from "../api.js";
 // treatment. Maji treats every vendor as someone you can approach for both;
 // it has no separate "trainer" field.
 //
-// Order: vendors in the student's own estate first, then the highest rated.
-// Contact details are only sent to logged-in students (see logistics.routes.js).
+// Week 11 Resilience:
+//   - Graceful fallback: when Maji is slow or down, shows saved data from memory
+//   - Displays visible banner: "Showing saved data from [time]. The partner is not responding."
+//   - If nothing is saved, displays a friendly "unavailable" message
 const sameEstate = (vendorEstate, studentEstate) =>
   String(studentEstate || "").split(",")[0].trim().toLowerCase() === String(vendorEstate || "").toLowerCase();
 
 export default function WaterVendorsCard({ estate, topic }) {
   const [vendors, setVendors] = useState(null);
   const [source, setSource] = useState("mock");
+  const [isStale, setIsStale] = useState(false);
+  const [asOf, setAsOf] = useState(null);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setError(null);
+    setIsStale(false);
+    setAsOf(null);
+
     api.getAllVendors()
       .then((res) => {
         if (cancelled) return;
         setVendors(res.vendors || []);
         if (res.source) setSource(res.source);
+        if (res.stale) {
+          setIsStale(true);
+          setAsOf(res.asOf);
+        }
       })
-      .catch((err) => !cancelled && setError(err.message || "Maji Website could not be reached."));
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err.message || "Partner data is unavailable right now. Try again in a minute.");
+        }
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -43,14 +58,22 @@ export default function WaterVendorsCard({ estate, topic }) {
         <div className="font-semibold text-sm font-display">Water vendors for {topic}</div>
         <span
           className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-            error
+            isStale
+              ? "text-amber-800 bg-amber-100 border-amber-300"
+              : error
               ? "text-amber-700 bg-amber-50 border-amber-200"
               : source === "live"
               ? "text-emerald-700 bg-emerald-50 border-emerald-100"
               : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
           }`}
         >
-          {error ? "Unavailable" : source === "live" ? "Live · Maji Website" : "Preview data"}
+          {isStale
+            ? "Saved data (fallback)"
+            : error
+            ? "Unavailable"
+            : source === "live"
+            ? "Live · Maji Website"
+            : "Preview data"}
         </span>
       </div>
 
@@ -58,9 +81,20 @@ export default function WaterVendorsCard({ estate, topic }) {
         Maji lists these vendors as people you can approach about water sales and water treatment. Your estate comes first.
       </p>
 
-      {error && (
+      {/* Week 11 Part D: Visible Stale Data Banner */}
+      {isStale && asOf && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs text-amber-900 flex items-start gap-2 shadow-xs">
+          <span className="text-amber-700 text-sm mt-[-1px]">⚠️</span>
+          <div className="leading-relaxed">
+            <span className="font-semibold">Notice:</span> Showing saved data from{" "}
+            <span className="font-mono font-medium">{new Date(asOf).toLocaleTimeString()}</span>. The partner is not responding.
+          </div>
+        </div>
+      )}
+
+      {error && !isStale && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900">
-          Maji Website could not be reached ({error}). It runs on a free host that can take up to a minute to wake up; try again shortly.
+          Partner data is unavailable right now ({error}). Try again in a minute.
         </div>
       )}
 

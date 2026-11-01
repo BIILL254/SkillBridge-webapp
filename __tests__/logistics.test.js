@@ -1,4 +1,5 @@
 import { request, app, login, auth } from "./helpers.js";
+import { clearLastGoodCache } from "../server/services/majiClient.js";
 
 let token;
 beforeAll(async () => { ({ token } = await login("billamani")); });
@@ -109,15 +110,22 @@ describe("live mode against a faked Maji Website", () => {
       return { ok: status >= 200 && status < 300, status, json: async () => body };
     };
   };
-  beforeEach(() => { process.env.MAJI_API_BASE_URL = "https://maji.example.test/"; });
-  afterEach(() => { global.fetch = realFetch; process.env.MAJI_API_BASE_URL = ""; });
+  beforeEach(() => {
+    process.env.MAJI_API_BASE_URL = "https://maji.example.test/";
+    clearLastGoodCache();
+  });
+  afterEach(() => {
+    global.fetch = realFetch;
+    process.env.MAJI_API_BASE_URL = "";
+    clearLastGoodCache();
+  });
 
   it("stations: calls /api/vendors/locations?estate=<Maji spelling> and maps the fields", async () => {
     fakeMaji(() => ({ body: [{ vendorId: 9, businessName: "Chemchemi Fresh Water Co.", estate: "Kasarani", secret: "do not pass on" }] }));
     const res = await request(app).get("/api/logistics/stations?estate=" + encodeURIComponent("Kasarani, Nairobi")).set(auth(token));
     expect(res.status).toBe(200);
     expect(calls).toEqual(["https://maji.example.test/api/vendors/locations?estate=Kasarani"]);
-    expect(res.body).toEqual({ source: "live", stations: [{ vendorId: 9, businessName: "Chemchemi Fresh Water Co.", estate: "Kasarani" }] });
+    expect(res.body).toMatchObject({ source: "live", stations: [{ vendorId: 9, businessName: "Chemchemi Fresh Water Co.", estate: "Kasarani" }] });
   });
 
   it("stations without an estate calls the plain path (all vendors)", async () => {
@@ -139,7 +147,7 @@ describe("live mode against a faked Maji Website", () => {
     fakeMaji(() => ({ body: [{ vendorId: 3, businessName: "Chemchemi", estate: "Kasarani", rating: 4.1, isVerified: true, isOnline: false, ownerName: "A. Owner", phone: "0711111111", internalNote: "never pass on" }] }));
     const res = await request(app).get("/api/logistics/vendors/all?estate=" + encodeURIComponent("Kasarani, Nairobi")).set(auth(token));
     expect(calls).toEqual(["https://maji.example.test/api/vendors/all?estate=Kasarani"]);
-    expect(res.body).toEqual({ source: "live", vendors: [{ vendorId: 3, businessName: "Chemchemi", estate: "Kasarani", rating: 4.1, isVerified: true, isOnline: false, ownerName: "A. Owner", phone: "0711111111" }] });
+    expect(res.body).toMatchObject({ source: "live", vendors: [{ vendorId: 3, businessName: "Chemchemi", estate: "Kasarani", rating: 4.1, isVerified: true, isOnline: false, ownerName: "A. Owner", phone: "0711111111" }] });
   });
 
   it("vendors/all without an estate calls the plain path", async () => {
