@@ -18,7 +18,9 @@ const __dirname = path.dirname(__filename);
 // SKILLBRIDGE_DB lets the automated tests point at an in-memory database
 // (":memory:") so running the test suite never touches your real
 // skillbridge.db. Unset in normal use, so nothing changes for `npm run server`.
-const db = new Database(process.env.SKILLBRIDGE_DB || path.join(__dirname, "..", "skillbridge.db"));
+const db = new Database(
+  process.env.SKILLBRIDGE_DB || path.join(__dirname, "..", "skillbridge.db"),
+);
 
 db.pragma("foreign_keys = ON");
 db.pragma("journal_mode = WAL");
@@ -121,37 +123,253 @@ db.exec(`
 
 const seedUsers = [
   // [id, name, dept, initials, online, rating, reviews, swaps, estate, lat, lng]
-  [1, "Bill Amani", "Technology", "BA", 1, 4.9, 23, 12, "Kileleshwa, Nairobi", -1.2762, 36.7816],
-  [2, "Jessica", "Design", "J", 1, 4.8, 17, 8, "Lavington, Nairobi", -1.2790, 36.7690],
-  [3, "William Kasongo", "Business", "WK", 0, 5.0, 31, 15, "Karen, Nairobi", -1.3192, 36.7076],
-  [4, "K.Dot", "Music & Arts", "KD", 1, 4.7, 12, 6, "Westlands, Nairobi", -1.2676, 36.8108],
-  [5, "La Pulga", "Fitness & Sports", "LP", 0, 4.9, 40, 20, "Kilimani, Nairobi", -1.2921, 36.7833],
-  [6, "Walter White", "Academic Subjects", "WW", 1, 4.6, 19, 9, "South B, Nairobi", -1.3095, 36.8280],
-  [7, "Bruce Wayne", "Business", "BW", 0, 4.8, 22, 11, "Runda, Nairobi", -1.2136, 36.8125],
-  [8, "Lelouch", "Life Skills", "L", 1, 4.5, 8, 4, "Kasarani, Nairobi", -1.2233, 36.8967],
-  [9, "Naruto Uzumaki", "Fitness & Sports", "NU", 1, 4.7, 14, 7, "Embakasi, Nairobi", -1.3242, 36.8938],
-  [10, "Ichigoat", "Fitness & Sports", "IG", 0, 4.9, 26, 13, "Rongai, Kajiado", -1.3958, 36.7539],
-  [11, "Jordan Lee", "Languages", "JL", 1, 4.8, 17, 8, "Ngong, Kajiado", -1.3529, 36.6564],
-  [12, "Priya Sharma", "Academic Subjects", "PS", 0, 5.0, 31, 15, "Thika Road, Nairobi", -1.2192, 36.8896],
-  [13, "Amina Farah", "Agriculture", "AF", 1, 4.9, 18, 9, "Ruiru, Kiambu", -1.1466, 36.9615],
-  [14, "Samuel Mwangi", "Agriculture", "SM", 0, 4.6, 11, 5, "Limuru, Kiambu", -1.1122, 36.6417],
+  [
+    1,
+    "Bill Amani",
+    "Technology",
+    "BA",
+    1,
+    4.9,
+    23,
+    12,
+    "Kileleshwa, Nairobi",
+    -1.2762,
+    36.7816,
+  ],
+  [
+    2,
+    "Jessica",
+    "Design",
+    "J",
+    1,
+    4.8,
+    17,
+    8,
+    "Lavington, Nairobi",
+    -1.279,
+    36.769,
+  ],
+  [
+    3,
+    "William Kasongo",
+    "Business",
+    "WK",
+    0,
+    5.0,
+    31,
+    15,
+    "Karen, Nairobi",
+    -1.3192,
+    36.7076,
+  ],
+  [
+    4,
+    "K.Dot",
+    "Music & Arts",
+    "KD",
+    1,
+    4.7,
+    12,
+    6,
+    "Westlands, Nairobi",
+    -1.2676,
+    36.8108,
+  ],
+  [
+    5,
+    "La Pulga",
+    "Fitness & Sports",
+    "LP",
+    0,
+    4.9,
+    40,
+    20,
+    "Kilimani, Nairobi",
+    -1.2921,
+    36.7833,
+  ],
+  [
+    6,
+    "Walter White",
+    "Academic Subjects",
+    "WW",
+    1,
+    4.6,
+    19,
+    9,
+    "South B, Nairobi",
+    -1.3095,
+    36.828,
+  ],
+  [
+    7,
+    "Bruce Wayne",
+    "Business",
+    "BW",
+    0,
+    4.8,
+    22,
+    11,
+    "Runda, Nairobi",
+    -1.2136,
+    36.8125,
+  ],
+  [
+    8,
+    "Lelouch",
+    "Life Skills",
+    "L",
+    1,
+    4.5,
+    8,
+    4,
+    "Kasarani, Nairobi",
+    -1.2233,
+    36.8967,
+  ],
+  [
+    9,
+    "Naruto Uzumaki",
+    "Fitness & Sports",
+    "NU",
+    1,
+    4.7,
+    14,
+    7,
+    "Embakasi, Nairobi",
+    -1.3242,
+    36.8938,
+  ],
+  [
+    10,
+    "Ichigoat",
+    "Fitness & Sports",
+    "IG",
+    0,
+    4.9,
+    26,
+    13,
+    "Rongai, Kajiado",
+    -1.3958,
+    36.7539,
+  ],
+  [
+    11,
+    "Jordan Lee",
+    "Languages",
+    "JL",
+    1,
+    4.8,
+    17,
+    8,
+    "Ngong, Kajiado",
+    -1.3529,
+    36.6564,
+  ],
+  [
+    12,
+    "Priya Sharma",
+    "Academic Subjects",
+    "PS",
+    0,
+    5.0,
+    31,
+    15,
+    "Thika Road, Nairobi",
+    -1.2192,
+    36.8896,
+  ],
+  [
+    13,
+    "Amina Farah",
+    "Agriculture",
+    "AF",
+    1,
+    4.9,
+    18,
+    9,
+    "Ruiru, Kiambu",
+    -1.1466,
+    36.9615,
+  ],
+  [
+    14,
+    "Samuel Mwangi",
+    "Agriculture",
+    "SM",
+    0,
+    4.6,
+    11,
+    5,
+    "Limuru, Kiambu",
+    -1.1122,
+    36.6417,
+  ],
 ];
 
 const userSkills = {
-  1: { offer: ["AI & Automation", "Web Development", "Python"], want: ["UI/UX Design", "Public Speaking", "Sales"] },
-  2: { offer: ["UI/UX Design", "Figma", "Content Creation"], want: ["Web Development", "Data Analysis", "Digital Marketing"] },
-  3: { offer: ["Sales", "Taxes", "Digital Marketing", "Water Sales"], want: ["Web Development", "Cybersecurity", "Public Speaking"] },
-  4: { offer: ["Music Production", "Songwriting", "Content Creation"], want: ["Digital Marketing", "Sales", "AI & Automation"] },
-  5: { offer: ["Football Coaching", "Fitness Training"], want: ["Sales", "Digital Marketing", "Public Speaking"] },
-  6: { offer: ["Chemistry", "Academic Tutoring", "Water Treatment"], want: ["UI/UX Design", "Public Speaking", "Sales"] },
-  7: { offer: ["Cybersecurity", "Cloud Computing", "Sales", "Water Sales"], want: ["Public Speaking", "Content Creation", "AI & Automation"] },
-  8: { offer: ["Public Speaking", "Strategy & Planning"], want: ["Web Development", "Cybersecurity", "Digital Marketing"] },
-  9: { offer: ["Fitness Training", "Public Speaking"], want: ["AI & Automation", "Cloud Computing", "Sales"] },
-  10: { offer: ["Karate", "Fitness Training"], want: ["Web Development", "Digital Marketing", "Music Production"] },
-  11: { offer: ["Spanish", "French", "Translation"], want: ["Web Development", "Data Analysis", "Cybersecurity"] },
-  12: { offer: ["Data Analysis", "Statistics", "Academic Tutoring"], want: ["Web Development", "Cybersecurity", "UI/UX Design"] },
-  13: { offer: ["Agronomy", "Soil Health", "Irrigation Systems", "Crop Disease Management", "Water Treatment"], want: ["Digital Marketing", "Data Analysis", "Web Development"] },
-  14: { offer: ["Farm Tech", "Livestock Management", "Organic Farming"], want: ["Sales", "Content Creation", "AI & Automation", "Water Treatment"] },
+  1: {
+    offer: ["AI & Automation", "Web Development", "Python"],
+    want: ["UI/UX Design", "Public Speaking", "Sales"],
+  },
+  2: {
+    offer: ["UI/UX Design", "Figma", "Content Creation"],
+    want: ["Web Development", "Data Analysis", "Digital Marketing"],
+  },
+  3: {
+    offer: ["Sales", "Taxes", "Digital Marketing", "Water Sales"],
+    want: ["Web Development", "Cybersecurity", "Public Speaking"],
+  },
+  4: {
+    offer: ["Music Production", "Songwriting", "Content Creation"],
+    want: ["Digital Marketing", "Sales", "AI & Automation"],
+  },
+  5: {
+    offer: ["Football Coaching", "Fitness Training"],
+    want: ["Sales", "Digital Marketing", "Public Speaking"],
+  },
+  6: {
+    offer: ["Chemistry", "Academic Tutoring", "Water Treatment"],
+    want: ["UI/UX Design", "Public Speaking", "Sales"],
+  },
+  7: {
+    offer: ["Cybersecurity", "Cloud Computing", "Sales", "Water Sales"],
+    want: ["Public Speaking", "Content Creation", "AI & Automation"],
+  },
+  8: {
+    offer: ["Public Speaking", "Strategy & Planning"],
+    want: ["Web Development", "Cybersecurity", "Digital Marketing"],
+  },
+  9: {
+    offer: ["Fitness Training", "Public Speaking"],
+    want: ["AI & Automation", "Cloud Computing", "Sales"],
+  },
+  10: {
+    offer: ["Karate", "Fitness Training"],
+    want: ["Web Development", "Digital Marketing", "Music Production"],
+  },
+  11: {
+    offer: ["Spanish", "French", "Translation"],
+    want: ["Web Development", "Data Analysis", "Cybersecurity"],
+  },
+  12: {
+    offer: ["Data Analysis", "Statistics", "Academic Tutoring"],
+    want: ["Web Development", "Cybersecurity", "UI/UX Design"],
+  },
+  13: {
+    offer: [
+      "Agronomy",
+      "Soil Health",
+      "Irrigation Systems",
+      "Crop Disease Management",
+      "Water Treatment",
+    ],
+    want: ["Digital Marketing", "Data Analysis", "Web Development"],
+  },
+  14: {
+    offer: ["Farm Tech", "Livestock Management", "Organic Farming"],
+    want: ["Sales", "Content Creation", "AI & Automation", "Water Treatment"],
+  },
 };
 
 const seed = db.transaction(() => {
@@ -161,7 +379,9 @@ const seed = db.transaction(() => {
     INSERT INTO users (id, name, dept, initials, online, rating, reviews, swaps, estate, lat, lng)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  const insertSkill = db.prepare("INSERT OR IGNORE INTO skills (name) VALUES (?)");
+  const insertSkill = db.prepare(
+    "INSERT OR IGNORE INTO skills (name) VALUES (?)",
+  );
   const getSkill = db.prepare("SELECT id FROM skills WHERE name = ?");
   const insertUserSkill = db.prepare(`
     INSERT OR IGNORE INTO user_skills (user_id, skill_id, type)
@@ -184,21 +404,75 @@ const seed = db.transaction(() => {
       (id, from_id, to_id, offer, want, type, msg, time_text, status)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  insertRequest.run(1, 2, 1, "UI/UX Design", "Web Development", "swap",
-    "Hey! I want to learn web dev. I could teach you UI/UX in return!", "10m ago", "incoming");
-  insertRequest.run(2, 4, 1, "Music Production", "AI & Automation", "swap",
-    "I want to learn AI & Automation for my next project. Happy to teach music production!", "2h ago", "incoming");
-  insertRequest.run(3, 11, 1, null, "Data Analysis", "coin",
-    "I used 3 Skill Coins for this. I really need Data Analysis skills!", "1d ago", "sent");
+  insertRequest.run(
+    1,
+    2,
+    1,
+    "UI/UX Design",
+    "Web Development",
+    "swap",
+    "Hey! I want to learn web dev. I could teach you UI/UX in return!",
+    "10m ago",
+    "incoming",
+  );
+  insertRequest.run(
+    2,
+    4,
+    1,
+    "Music Production",
+    "AI & Automation",
+    "swap",
+    "I want to learn AI & Automation for my next project. Happy to teach music production!",
+    "2h ago",
+    "incoming",
+  );
+  insertRequest.run(
+    3,
+    11,
+    1,
+    null,
+    "Data Analysis",
+    "coin",
+    "I used 3 Skill Coins for this. I really need Data Analysis skills!",
+    "1d ago",
+    "sent",
+  );
 
   const insertSession = db.prepare(`
     INSERT INTO sessions (id, with_user, skill, date, time, dur, color, reviewed, user_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
   `);
   // the demo sessions belong to user 1 (Bill Amani, the demo account)
-  insertSession.run(1, "Jessica", "UI/UX Design basics", "2026-06-26", "14:00", 60, "#1FD4A0", 0);
-  insertSession.run(2, "K.Dot", "Music Production intro", "2026-06-28", "10:30", 45, "#F5B731", 0);
-  insertSession.run(3, "Jordan Lee", "Spanish for beginners", "2026-06-30", "16:00", 60, "#8B6BF5", 0);
+  insertSession.run(
+    1,
+    "Jessica",
+    "UI/UX Design basics",
+    "2026-06-26",
+    "14:00",
+    60,
+    "#1FD4A0",
+    0,
+  );
+  insertSession.run(
+    2,
+    "K.Dot",
+    "Music Production intro",
+    "2026-06-28",
+    "10:30",
+    45,
+    "#F5B731",
+    0,
+  );
+  insertSession.run(
+    3,
+    "Jordan Lee",
+    "Spanish for beginners",
+    "2026-06-30",
+    "16:00",
+    60,
+    "#8B6BF5",
+    0,
+  );
 
   db.prepare("INSERT INTO profiles (user_id, coins) VALUES (1, 12)").run();
   const history = db.prepare(`
@@ -216,7 +490,10 @@ const seed = db.transaction(() => {
 // features existed.
 // ---------------------------------------------------------------------------
 function columnExists(table, column) {
-  return db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column);
+  return db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all()
+    .some((c) => c.name === column);
 }
 
 if (!columnExists("users", "estate")) {
@@ -250,7 +527,14 @@ if (!columnExists("users", "username")) {
   `);
 }
 if (!columnExists("users", "must_change_password")) {
-  db.exec(`ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0;`);
+  db.exec(
+    `ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0;`,
+  );
+}
+// Where a session happens: a Maji delivery zone such as "Westlands", or NULL
+// for an online session.
+if (!columnExists("sessions", "location")) {
+  db.exec(`ALTER TABLE sessions ADD COLUMN location TEXT;`);
 }
 // Requests to a Maji vendor (not a SkillBridge user): the vendor's id and name
 // at Maji. to_id stays NULL for these, since a vendor has no SkillBridge account.
@@ -266,14 +550,21 @@ seed();
 // seed() only ever runs once on a truly empty database, so anyone whose
 // skillbridge.db already existed needs these rows inserted directly.
 {
-  const existingIds = new Set(db.prepare("SELECT id FROM users").all().map((r) => r.id));
+  const existingIds = new Set(
+    db
+      .prepare("SELECT id FROM users")
+      .all()
+      .map((r) => r.id),
+  );
   const newUsers = seedUsers.filter((u) => !existingIds.has(u[0]));
   if (newUsers.length > 0) {
     const insertUser = db.prepare(`
       INSERT INTO users (id, name, dept, initials, online, rating, reviews, swaps, estate, lat, lng)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const insertSkill = db.prepare("INSERT OR IGNORE INTO skills (name) VALUES (?)");
+    const insertSkill = db.prepare(
+      "INSERT OR IGNORE INTO skills (name) VALUES (?)",
+    );
     const getSkill = db.prepare("SELECT id FROM skills WHERE name = ?");
     const insertUserSkill = db.prepare(`
       INSERT OR IGNORE INTO user_skills (user_id, skill_id, type)
@@ -295,11 +586,21 @@ seed();
 
 // Backfill estate/coordinates for any user row still missing them.
 {
-  const estateBackfill = new Map(seedUsers.map((u) => [u[0], { estate: u[8], lat: u[9], lng: u[10] }]));
-  const usersMissingLocation = db.prepare("SELECT id FROM users WHERE estate IS NULL").all();
-  const updateUserLocation = db.prepare("UPDATE users SET estate = ?, lat = ?, lng = ? WHERE id = ?");
+  const estateBackfill = new Map(
+    seedUsers.map((u) => [u[0], { estate: u[8], lat: u[9], lng: u[10] }]),
+  );
+  const usersMissingLocation = db
+    .prepare("SELECT id FROM users WHERE estate IS NULL")
+    .all();
+  const updateUserLocation = db.prepare(
+    "UPDATE users SET estate = ?, lat = ?, lng = ? WHERE id = ?",
+  );
   for (const { id } of usersMissingLocation) {
-    const loc = estateBackfill.get(id) || { estate: "Nairobi", lat: -1.2921, lng: 36.8219 };
+    const loc = estateBackfill.get(id) || {
+      estate: "Nairobi",
+      lat: -1.2921,
+      lng: 36.8219,
+    };
     updateUserLocation.run(loc.estate, loc.lat, loc.lng, id);
   }
 }
@@ -310,9 +611,29 @@ seed();
 const CATEGORY_KEYWORDS = {
   // Water categories must come first: "water sales" would otherwise be
   // caught by Business's "sales" keyword.
-  "Water Treatment": ["water treatment", "water purification", "filtration", "chlorination", "desalination", "water quality"],
-  "Water Sales": ["water sales", "water vending", "water delivery", "bulk water"],
-  Technology: ["web development", "ai & automation", "python", "cybersecurity", "cloud computing", "data analysis", "statistics"],
+  "Water Treatment": [
+    "water treatment",
+    "water purification",
+    "filtration",
+    "chlorination",
+    "desalination",
+    "water quality",
+  ],
+  "Water Sales": [
+    "water sales",
+    "water vending",
+    "water delivery",
+    "bulk water",
+  ],
+  Technology: [
+    "web development",
+    "ai & automation",
+    "python",
+    "cybersecurity",
+    "cloud computing",
+    "data analysis",
+    "statistics",
+  ],
   Design: ["ui/ux design", "figma"],
   Business: ["sales", "taxes", "digital marketing", "strategy & planning"],
   Languages: ["spanish", "french", "translation"],
@@ -320,9 +641,16 @@ const CATEGORY_KEYWORDS = {
   "Fitness & Sports": ["football coaching", "fitness training", "karate"],
   "Academic Subjects": ["chemistry", "academic tutoring"],
   Agriculture: [
-    "agronomy", "soil health", "irrigation systems", "crop disease management",
-    "farm tech", "livestock management", "organic farming", "pest management",
-    "urban farming", "greenhouse",
+    "agronomy",
+    "soil health",
+    "irrigation systems",
+    "crop disease management",
+    "farm tech",
+    "livestock management",
+    "organic farming",
+    "pest management",
+    "urban farming",
+    "greenhouse",
   ],
 };
 function categorize(name) {
@@ -333,8 +661,12 @@ function categorize(name) {
   return "Life Skills";
 }
 {
-  const skillsMissingCategory = db.prepare("SELECT id, name FROM skills WHERE category IS NULL").all();
-  const updateSkillCategory = db.prepare("UPDATE skills SET category = ? WHERE id = ?");
+  const skillsMissingCategory = db
+    .prepare("SELECT id, name FROM skills WHERE category IS NULL")
+    .all();
+  const updateSkillCategory = db.prepare(
+    "UPDATE skills SET category = ? WHERE id = ?",
+  );
   for (const skill of skillsMissingCategory) {
     updateSkillCategory.run(categorize(skill.name), skill.id);
   }
@@ -345,22 +677,35 @@ function categorize(name) {
 // when the skill is missing, so a user who later removes one of these skills
 // does not get it re-added on the next restart.
 {
-  const hasWater = db.prepare("SELECT 1 FROM skills WHERE name = 'Water Treatment'").get();
+  const hasWater = db
+    .prepare("SELECT 1 FROM skills WHERE name = 'Water Treatment'")
+    .get();
   if (!hasWater) {
     const addWater = db.transaction(() => {
-      const upsertSkill = db.prepare("INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)");
+      const upsertSkill = db.prepare(
+        "INSERT OR IGNORE INTO skills (name, category) VALUES (?, ?)",
+      );
       const getSkillId = db.prepare("SELECT id FROM skills WHERE name = ?");
       const userExists = db.prepare("SELECT 1 FROM users WHERE id = ?");
-      const link = db.prepare("INSERT OR IGNORE INTO user_skills (user_id, skill_id, type) VALUES (?, ?, ?)");
-      for (const [name, category] of [["Water Treatment", "Water Treatment"], ["Water Sales", "Water Sales"]]) {
+      const link = db.prepare(
+        "INSERT OR IGNORE INTO user_skills (user_id, skill_id, type) VALUES (?, ?, ?)",
+      );
+      for (const [name, category] of [
+        ["Water Treatment", "Water Treatment"],
+        ["Water Sales", "Water Sales"],
+      ]) {
         upsertSkill.run(name, category);
       }
       // [userId, skill, offer|want]
       for (const [userId, skill, type] of [
-        [6, "Water Treatment", "offer"], [13, "Water Treatment", "offer"], [14, "Water Treatment", "want"],
-        [3, "Water Sales", "offer"], [7, "Water Sales", "offer"],
+        [6, "Water Treatment", "offer"],
+        [13, "Water Treatment", "offer"],
+        [14, "Water Treatment", "want"],
+        [3, "Water Sales", "offer"],
+        [7, "Water Sales", "offer"],
       ]) {
-        if (userExists.get(userId)) link.run(userId, getSkillId.get(skill).id, type);
+        if (userExists.get(userId))
+          link.run(userId, getSkillId.get(skill).id, type);
       }
     });
     addWater();
@@ -391,7 +736,9 @@ function generateUniqueUsername(name, excludeUserId = null) {
     ? db.prepare("SELECT id FROM users WHERE username = ? AND id != ?")
     : db.prepare("SELECT id FROM users WHERE username = ?");
   while (true) {
-    const existing = excludeUserId ? existsStmt.get(candidate, excludeUserId) : existsStmt.get(candidate);
+    const existing = excludeUserId
+      ? existsStmt.get(candidate, excludeUserId)
+      : existsStmt.get(candidate);
     if (!existing) return candidate;
     candidate = `${base}${++suffix}`;
   }
@@ -407,11 +754,13 @@ function generateInitials(name) {
 }
 
 {
-  const usersMissingAuth = db.prepare("SELECT id, name FROM users WHERE password_hash IS NULL").all();
+  const usersMissingAuth = db
+    .prepare("SELECT id, name FROM users WHERE password_hash IS NULL")
+    .all();
   if (usersMissingAuth.length > 0) {
     const defaultHash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
     const updateAuth = db.prepare(
-      "UPDATE users SET username = ?, phone = ?, password_hash = ?, must_change_password = 1 WHERE id = ?"
+      "UPDATE users SET username = ?, phone = ?, password_hash = ?, must_change_password = 1 WHERE id = ?",
     );
     for (const user of usersMissingAuth) {
       const username = generateUniqueUsername(user.name, user.id);
@@ -422,16 +771,33 @@ function generateInitials(name) {
     }
   }
 
-  const adminExists = db.prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1").get();
+  const adminExists = db
+    .prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
+    .get();
   if (!adminExists) {
     const adminHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
     // A password chosen via ADMIN_PASSWORD is already a real one, so don't
     // force a change on first login; the default "1234" still does.
-    const result = db.prepare(`
+    const result = db
+      .prepare(
+        `
       INSERT INTO users (name, dept, initials, online, rating, reviews, swaps, estate, username, phone, password_hash, role, must_change_password)
       VALUES (?, ?, ?, 1, 0, 0, 0, ?, ?, ?, ?, 'admin', ?)
-    `).run("Admin", "Administration", "AD", "Nairobi", ADMIN_USERNAME, "0700000000", adminHash, ADMIN_PASSWORD_IS_CUSTOM ? 0 : 1);
-    db.prepare("INSERT INTO profiles (user_id, coins) VALUES (?, 0)").run(result.lastInsertRowid);
+    `,
+      )
+      .run(
+        "Admin",
+        "Administration",
+        "AD",
+        "Nairobi",
+        ADMIN_USERNAME,
+        "0700000000",
+        adminHash,
+        ADMIN_PASSWORD_IS_CUSTOM ? 0 : 1,
+      );
+    db.prepare("INSERT INTO profiles (user_id, coins) VALUES (?, 0)").run(
+      result.lastInsertRowid,
+    );
   }
 }
 
@@ -440,39 +806,50 @@ function generateInitials(name) {
 // "earn a coin" logged a history row and then updated ZERO rows, leaving the
 // balance stuck at 0. Backfill the missing rows here, and adjustCoins()
 // below also guarantees the row exists as a second line of defence.
-db.prepare("INSERT OR IGNORE INTO profiles (user_id, coins) SELECT id, 0 FROM users").run();
+db.prepare(
+  "INSERT OR IGNORE INTO profiles (user_id, coins) SELECT id, 0 FROM users",
+).run();
 
 // ---------------------------------------------------------------------------
 // Read helpers
 // ---------------------------------------------------------------------------
 async function getSkillsForUser(userId, type) {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT s.name
     FROM skills s
     JOIN user_skills us ON us.skill_id = s.id
     WHERE us.user_id = ? AND us.type = ?
     ORDER BY s.name
-  `).all(userId, type).map((row) => row.name);
+  `,
+    )
+    .all(userId, type)
+    .map((row) => row.name);
 }
 
 export async function getUsers() {
   // the admin account is not a student: keep it out of Discover / expert listings
-  const users = db.prepare("SELECT * FROM users WHERE role != 'admin' ORDER BY id").all();
-  return Promise.all(users.map(async (user) => ({
-    id: user.id,
-    name: user.name,
-    dept: user.dept,
-    initials: user.initials,
-    online: Boolean(user.online),
-    rating: user.rating,
-    reviews: user.reviews,
-    swaps: user.swaps,
-    estate: user.estate,
-    lat: user.lat,
-    lng: user.lng,
-    offers: await getSkillsForUser(user.id, "offer"),
-    wants: await getSkillsForUser(user.id, "want"),
-  })));
+  const users = db
+    .prepare("SELECT * FROM users WHERE role != 'admin' ORDER BY id")
+    .all();
+  return Promise.all(
+    users.map(async (user) => ({
+      id: user.id,
+      name: user.name,
+      dept: user.dept,
+      initials: user.initials,
+      online: Boolean(user.online),
+      rating: user.rating,
+      reviews: user.reviews,
+      swaps: user.swaps,
+      estate: user.estate,
+      lat: user.lat,
+      lng: user.lng,
+      offers: await getSkillsForUser(user.id, "offer"),
+      wants: await getSkillsForUser(user.id, "want"),
+    })),
+  );
 }
 
 export async function getUserById(id) {
@@ -506,7 +883,9 @@ function toExpert(u) {
     rating: Number(u.rating),
     latitude: Number(u.lat),
     longitude: Number(u.lng),
-    bio: u.offers.length ? `${u.dept} mentor offering ${u.offers.slice(0, 3).join(", ")}.` : `${u.dept} mentor.`,
+    bio: u.offers.length
+      ? `${u.dept} mentor offering ${u.offers.slice(0, 3).join(", ")}.`
+      : `${u.dept} mentor.`,
     skills: u.offers,
   };
 }
@@ -527,7 +906,13 @@ export async function getExperts({ estate, sort, lat, lng } = {}) {
 
   if (sort === "proximity") {
     experts = experts
-      .map((e) => ({ ...e, distanceKm: Math.round(distanceKm(Number(lat), Number(lng), e.latitude, e.longitude) * 10) / 10 }))
+      .map((e) => ({
+        ...e,
+        distanceKm:
+          Math.round(
+            distanceKm(Number(lat), Number(lng), e.latitude, e.longitude) * 10,
+          ) / 10,
+      }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
   } else {
     experts.sort((a, b) => b.rating - a.rating); // default and sort=rating
@@ -545,7 +930,11 @@ export async function getExpertById(id) {
 export async function getExpertReviews(id) {
   const u = await getUserById(id);
   if (!u || !isExpert(u)) return null;
-  return { rating: Number(u.rating), reviewCount: u.reviews, completedSessions: u.swaps };
+  return {
+    rating: Number(u.rating),
+    reviewCount: u.reviews,
+    completedSessions: u.swaps,
+  };
 }
 
 const DAILY_SLOT_TEMPLATE = ["09:00", "11:00", "14:00", "16:00"];
@@ -559,9 +948,12 @@ export async function getExpertAvailability(id) {
   // Only date and time are read here - never who booked it - so nothing about
   // other users leaks through this public availability endpoint.
   const booked = new Set(
-    db.prepare("SELECT date, time FROM sessions WHERE LOWER(with_user) = LOWER(?)")
+    db
+      .prepare(
+        "SELECT date, time FROM sessions WHERE LOWER(with_user) = LOWER(?)",
+      )
       .all(u.name)
-      .map((s) => `${s.date}_${s.time}`)
+      .map((s) => `${s.date}_${s.time}`),
   );
 
   const slots = [];
@@ -571,7 +963,12 @@ export async function getExpertAvailability(id) {
     d.setDate(d.getDate() + dayOffset);
     const dateStr = d.toISOString().slice(0, 10);
     for (const time of DAILY_SLOT_TEMPLATE) {
-      if (!booked.has(`${dateStr}_${time}`)) slots.push({ date: dateStr, startTime: `${time}:00`, durationMinutes: 60 });
+      if (!booked.has(`${dateStr}_${time}`))
+        slots.push({
+          date: dateStr,
+          startTime: `${time}:00`,
+          durationMinutes: 60,
+        });
     }
   }
   return slots;
@@ -613,50 +1010,103 @@ function shapeRequest(row) {
 }
 
 export async function getRequests(userId) {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE from_id = ? OR to_id = ? ORDER BY id
-  `).all(userId, userId).map(shapeRequest);
+  `,
+    )
+    .all(userId, userId)
+    .map(shapeRequest);
 }
 
 export async function getRequestById(id) {
-  return shapeRequest(db.prepare(`
+  return shapeRequest(
+    db
+      .prepare(
+        `
     SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(id));
+  `,
+      )
+      .get(id),
+  );
 }
 
-export async function addRequest({ fromId, toId, offer, want, type, msg, vendorId, vendorName }) {
+export async function addRequest({
+  fromId,
+  toId,
+  offer,
+  want,
+  type,
+  msg,
+  vendorId,
+  vendorName,
+}) {
   const isVendor = vendorId != null;
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     INSERT INTO requests (from_id, to_id, offer, want, type, msg, time_text, status, vendor_id, vendor_name)
     VALUES (?, ?, ?, ?, ?, ?, 'Just now', 'sent', ?, ?)
-  `).run(
-    fromId ?? null,
-    isVendor ? null : (toId ?? fromId ?? null),
-    offer ?? null, want, type, msg,
-    isVendor ? vendorId : null,
-    isVendor ? vendorName : null,
-  );
+  `,
+    )
+    .run(
+      fromId ?? null,
+      isVendor ? null : (toId ?? fromId ?? null),
+      offer ?? null,
+      want,
+      type,
+      msg,
+      isVendor ? vendorId : null,
+      isVendor ? vendorName : null,
+    );
 
-  return shapeRequest(db.prepare(`
+  return shapeRequest(
+    db
+      .prepare(
+        `
     SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(result.lastInsertRowid));
+  `,
+      )
+      .get(result.lastInsertRowid),
+  );
 }
 
-export async function addConsultationRequest({ farmerName, topic, expertId, date }) {
+export async function addConsultationRequest({
+  farmerName,
+  topic,
+  expertId,
+  date,
+}) {
   const msg = `Consultation request from ${farmerName} (via Farmers-AgroConnect) for ${date}.`;
-  return addRequest({ fromId: null, toId: Number(expertId), offer: null, want: topic, type: "consult", msg });
+  return addRequest({
+    fromId: null,
+    toId: Number(expertId),
+    offer: null,
+    want: topic,
+    type: "consult",
+    msg,
+  });
 }
 
 export async function updateRequestStatus(id, status) {
-  const result = db.prepare("UPDATE requests SET status = ? WHERE id = ?").run(status, id);
+  const result = db
+    .prepare("UPDATE requests SET status = ? WHERE id = ?")
+    .run(status, id);
   if (!result.changes) return null;
-  return shapeRequest(db.prepare(`
+  return shapeRequest(
+    db
+      .prepare(
+        `
     SELECT ${REQUEST_COLUMNS}
     FROM requests WHERE id = ?
-  `).get(id));
+  `,
+      )
+      .get(id),
+  );
 }
 
 export async function removeRequest(id) {
@@ -665,54 +1115,115 @@ export async function removeRequest(id) {
 }
 
 // Only the sessions that belong to the given user.
+const SESSION_COLUMNS = `id, with_user AS "with", skill, date, time, dur, color, reviewed, location`;
+
+// reviewed is a real boolean, and "location" only appears on sessions that have
+// one, so online sessions keep exactly the shape they always had.
+function shapeSession(row) {
+  if (!row) return null;
+  const { location, reviewed, ...rest } = row;
+  return {
+    ...rest,
+    reviewed: Boolean(reviewed),
+    ...(location != null ? { location } : {}),
+  };
+}
+
 export async function getSessions(userId) {
-  return db.prepare(`
-    SELECT id, with_user AS "with", skill, date, time, dur, color, reviewed
+  return db
+    .prepare(
+      `
+    SELECT ${SESSION_COLUMNS}
     FROM sessions WHERE user_id = ? ORDER BY date, time
-  `).all(userId).map((s) => ({ ...s, reviewed: Boolean(s.reviewed) }));
+  `,
+    )
+    .all(userId)
+    .map(shapeSession);
 }
 
 // Owner lookup for the route's 404 / 403 check. user_id is NOT part of the
 // session shape returned to clients.
 export async function getSessionOwner(id) {
-  const row = db.prepare("SELECT user_id AS userId FROM sessions WHERE id = ?").get(id);
+  const row = db
+    .prepare("SELECT user_id AS userId FROM sessions WHERE id = ?")
+    .get(id);
   return row ? row.userId : undefined; // undefined = no such session
 }
 
-export async function addSession({ userId, withUser, skill, date, time, dur, color }) {
-  const result = db.prepare(`
-    INSERT INTO sessions (with_user, skill, date, time, dur, color, reviewed, user_id)
-    VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-  `).run(withUser, skill, date, time, dur || 60, color || "#10B981", userId);
+export async function addSession({
+  userId,
+  withUser,
+  skill,
+  date,
+  time,
+  dur,
+  color,
+  location,
+}) {
+  const result = db
+    .prepare(
+      `
+    INSERT INTO sessions (with_user, skill, date, time, dur, color, reviewed, user_id, location)
+    VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+  `,
+    )
+    .run(
+      withUser,
+      skill,
+      date,
+      time,
+      dur || 60,
+      color || "#10B981",
+      userId,
+      location ?? null,
+    );
 
-  const s = db.prepare(`
-    SELECT id, with_user AS "with", skill, date, time, dur, color, reviewed
+  return shapeSession(
+    db
+      .prepare(
+        `
+    SELECT ${SESSION_COLUMNS}
     FROM sessions WHERE id = ?
-  `).get(result.lastInsertRowid);
-  return { ...s, reviewed: Boolean(s.reviewed) };
+  `,
+      )
+      .get(result.lastInsertRowid),
+  );
 }
 
 export async function markSessionReviewed(id) {
-  const result = db.prepare("UPDATE sessions SET reviewed = 1 WHERE id = ?").run(id);
+  const result = db
+    .prepare("UPDATE sessions SET reviewed = 1 WHERE id = ?")
+    .run(id);
   if (!result.changes) return null;
-  const s = db.prepare(`
-    SELECT id, with_user AS "with", skill, date, time, dur, color, reviewed
+  return shapeSession(
+    db
+      .prepare(
+        `
+    SELECT ${SESSION_COLUMNS}
     FROM sessions WHERE id = ?
-  `).get(id);
-  return { ...s, reviewed: Boolean(s.reviewed) };
+  `,
+      )
+      .get(id),
+  );
 }
 
 export async function getProfile(userId) {
-  const profile = db.prepare("SELECT coins FROM profiles WHERE user_id = ?").get(userId);
+  const profile = db
+    .prepare("SELECT coins FROM profiles WHERE user_id = ?")
+    .get(userId);
   return {
     offers: await getSkillsForUser(userId, "offer"),
     wants: await getSkillsForUser(userId, "want"),
     coins: profile?.coins ?? 0,
-    coinHistory: db.prepare(`
+    coinHistory: db
+      .prepare(
+        `
       SELECT id, action, change, date_text AS date
       FROM coin_history WHERE user_id = ?
       ORDER BY id DESC
-    `).all(userId),
+    `,
+      )
+      .all(userId),
   };
 }
 
@@ -724,10 +1235,12 @@ const SELF_EDITABLE_FIELDS = ["dept", "estate"];
 
 export async function updateOwnProfileInfo(userId, fields) {
   const updates = Object.entries(fields).filter(
-    ([key, value]) => SELF_EDITABLE_FIELDS.includes(key) && value !== undefined
+    ([key, value]) => SELF_EDITABLE_FIELDS.includes(key) && value !== undefined,
   );
   if (updates.length === 0) {
-    const err = new Error(`No editable fields provided. Allowed: ${SELF_EDITABLE_FIELDS.join(", ")}`);
+    const err = new Error(
+      `No editable fields provided. Allowed: ${SELF_EDITABLE_FIELDS.join(", ")}`,
+    );
     err.status = 400;
     throw err;
   }
@@ -740,7 +1253,10 @@ export async function updateOwnProfileInfo(userId, fields) {
   }
   const setClause = updates.map(([key]) => `${key} = ?`).join(", ");
   const values = updates.map(([, value]) => value.trim());
-  db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values, userId);
+  db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(
+    ...values,
+    userId,
+  );
 
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
   return toSafeUser(row);
@@ -750,22 +1266,28 @@ export async function addProfileSkill(userId, type, value) {
   const name = value.trim();
   db.prepare("INSERT OR IGNORE INTO skills (name) VALUES (?)").run(name);
   const skill = db.prepare("SELECT id FROM skills WHERE name = ?").get(name);
-  db.prepare("INSERT OR IGNORE INTO user_skills (user_id, skill_id, type) VALUES (?, ?, ?)")
-    .run(userId, skill.id, type);
+  db.prepare(
+    "INSERT OR IGNORE INTO user_skills (user_id, skill_id, type) VALUES (?, ?, ?)",
+  ).run(userId, skill.id, type);
   return getProfile(userId);
 }
 
 export async function removeProfileSkill(userId, type, value) {
-  const skill = db.prepare("SELECT id FROM skills WHERE name = ?").get(value.trim());
+  const skill = db
+    .prepare("SELECT id FROM skills WHERE name = ?")
+    .get(value.trim());
   if (skill) {
-    db.prepare("DELETE FROM user_skills WHERE user_id = ? AND skill_id = ? AND type = ?")
-      .run(userId, skill.id, type);
+    db.prepare(
+      "DELETE FROM user_skills WHERE user_id = ? AND skill_id = ? AND type = ?",
+    ).run(userId, skill.id, type);
   }
   return getProfile(userId);
 }
 
 export async function adjustCoins(userId, delta, reason) {
-  const profile = db.prepare("SELECT coins FROM profiles WHERE user_id = ?").get(userId);
+  const profile = db
+    .prepare("SELECT coins FROM profiles WHERE user_id = ?")
+    .get(userId);
   const current = profile?.coins ?? 0;
   if (current + delta < 0) {
     const err = new Error("Insufficient Skill Coins");
@@ -773,12 +1295,23 @@ export async function adjustCoins(userId, delta, reason) {
     throw err;
   }
   const tx = db.transaction(() => {
-    db.prepare("INSERT OR IGNORE INTO profiles (user_id, coins) VALUES (?, 0)").run(userId);
-    db.prepare("UPDATE profiles SET coins = coins + ? WHERE user_id = ?").run(delta, userId);
-    db.prepare(`
+    db.prepare(
+      "INSERT OR IGNORE INTO profiles (user_id, coins) VALUES (?, 0)",
+    ).run(userId);
+    db.prepare("UPDATE profiles SET coins = coins + ? WHERE user_id = ?").run(
+      delta,
+      userId,
+    );
+    db.prepare(
+      `
       INSERT INTO coin_history (user_id, action, change, date_text)
       VALUES (?, ?, ?, 'Just now')
-    `).run(userId, reason || (delta > 0 ? "Coins earned" : "Coins spent"), delta);
+    `,
+    ).run(
+      userId,
+      reason || (delta > 0 ? "Coins earned" : "Coins spent"),
+      delta,
+    );
   });
   tx();
   return getProfile(userId);
@@ -807,7 +1340,11 @@ export function toSafeUser(row) {
 }
 
 export async function findUserByUsername(username) {
-  return db.prepare("SELECT * FROM users WHERE username = ?").get(username.toLowerCase().trim()) || null;
+  return (
+    db
+      .prepare("SELECT * FROM users WHERE username = ?")
+      .get(username.toLowerCase().trim()) || null
+  );
 }
 
 // Like getUserById, but returns the full account shape (username, phone,
@@ -828,12 +1365,16 @@ const PHONE_PATTERN = /^0[17]\d{8}$/; // Kenyan format: 07xxxxxxxx or 01xxxxxxxx
 export async function createUser({ name, username, phone, password }) {
   const normalizedUsername = username.toLowerCase().trim();
   if (!USERNAME_PATTERN.test(normalizedUsername)) {
-    const err = new Error("Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)");
+    const err = new Error(
+      "Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)",
+    );
     err.status = 400;
     throw err;
   }
   if (!PHONE_PATTERN.test(phone)) {
-    const err = new Error("Phone number must be in the format 07XXXXXXXX or 01XXXXXXXX");
+    const err = new Error(
+      "Phone number must be in the format 07XXXXXXXX or 01XXXXXXXX",
+    );
     err.status = 400;
     throw err;
   }
@@ -847,16 +1388,31 @@ export async function createUser({ name, username, phone, password }) {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const tx = db.transaction(() => {
-    const result = db.prepare(`
+    const result = db
+      .prepare(
+        `
       INSERT INTO users (name, dept, initials, online, rating, reviews, swaps, username, phone, password_hash, role, must_change_password)
       VALUES (?, ?, ?, 1, 0, 0, 0, ?, ?, ?, 'user', 0)
-    `).run(name.trim(), "Undeclared", initials, normalizedUsername, phone, passwordHash);
+    `,
+      )
+      .run(
+        name.trim(),
+        "Undeclared",
+        initials,
+        normalizedUsername,
+        phone,
+        passwordHash,
+      );
     const userId = result.lastInsertRowid;
-    db.prepare("INSERT INTO profiles (user_id, coins) VALUES (?, 5)").run(userId);
-    db.prepare(`
+    db.prepare("INSERT INTO profiles (user_id, coins) VALUES (?, 5)").run(
+      userId,
+    );
+    db.prepare(
+      `
       INSERT INTO coin_history (user_id, action, change, date_text)
       VALUES (?, 'Welcome bonus', 5, 'Just now')
-    `).run(userId);
+    `,
+    ).run(userId);
     return userId;
   });
   const userId = tx();
@@ -873,19 +1429,27 @@ const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function createAuthToken(userId) {
   const token = crypto.randomBytes(32).toString("hex");
-  db.prepare("INSERT INTO auth_tokens (user_id, token) VALUES (?, ?)").run(userId, token);
+  db.prepare("INSERT INTO auth_tokens (user_id, token) VALUES (?, ?)").run(
+    userId,
+    token,
+  );
   return token;
 }
 
 export async function getUserByToken(token) {
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT u.*, t.created_at AS tokenCreatedAt FROM auth_tokens t
     JOIN users u ON u.id = t.user_id
     WHERE t.token = ?
-  `).get(token);
+  `,
+    )
+    .get(token);
   if (!row) return null;
 
-  const tokenAgeMs = Date.now() - new Date(row.tokenCreatedAt.replace(" ", "T") + "Z").getTime();
+  const tokenAgeMs =
+    Date.now() - new Date(row.tokenCreatedAt.replace(" ", "T") + "Z").getTime();
   if (tokenAgeMs > TOKEN_MAX_AGE_MS) {
     db.prepare("DELETE FROM auth_tokens WHERE token = ?").run(token); // clean up while we're here
     return null;
@@ -900,14 +1464,18 @@ export async function deleteAuthToken(token) {
 // Self-service password change — requires the current password. Clears
 // must_change_password so the forced-change screen doesn't reappear.
 export async function changePassword(userId, oldPassword, newPassword) {
-  const row = db.prepare("SELECT password_hash FROM users WHERE id = ?").get(userId);
+  const row = db
+    .prepare("SELECT password_hash FROM users WHERE id = ?")
+    .get(userId);
   if (!row || !(await bcrypt.compare(oldPassword, row.password_hash))) {
     const err = new Error("Current password is incorrect");
     err.status = 401;
     throw err;
   }
   const newHash = await bcrypt.hash(newPassword, 10);
-  db.prepare("UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?").run(newHash, userId);
+  db.prepare(
+    "UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?",
+  ).run(newHash, userId);
 }
 
 // Admin override — sets a user's password directly, no old password
@@ -915,9 +1483,11 @@ export async function changePassword(userId, oldPassword, newPassword) {
 // now knows the temporary password they just set).
 export async function adminSetPassword(userId, newPassword) {
   const newHash = await bcrypt.hash(newPassword, 10);
-  const result = db.prepare(
-    "UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?"
-  ).run(newHash, userId);
+  const result = db
+    .prepare(
+      "UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?",
+    )
+    .run(newHash, userId);
   return result.changes > 0;
 }
 
@@ -928,12 +1498,25 @@ export async function adminSetPassword(userId, newPassword) {
 export async function adminGetAllUsers() {
   const rows = db.prepare("SELECT * FROM users ORDER BY id").all();
   return rows.map((row) => {
-    const profile = db.prepare("SELECT coins FROM profiles WHERE user_id = ?").get(row.id);
+    const profile = db
+      .prepare("SELECT coins FROM profiles WHERE user_id = ?")
+      .get(row.id);
     return { ...toSafeUser(row), coins: profile?.coins ?? 0 };
   });
 }
 
-const ADMIN_EDITABLE_FIELDS = ["name", "username", "phone", "dept", "role", "online", "rating", "reviews", "swaps", "estate"];
+const ADMIN_EDITABLE_FIELDS = [
+  "name",
+  "username",
+  "phone",
+  "dept",
+  "role",
+  "online",
+  "rating",
+  "reviews",
+  "swaps",
+  "estate",
+];
 export const VALID_ROLES = ["user", "admin"];
 
 function badRequest(message, status = 400) {
@@ -946,46 +1529,63 @@ function badRequest(message, status = 400) {
 // value can never reach the database (and a request with one good field and
 // one bad field writes neither). Returns [column, value] pairs ready to save.
 function validateAdminUpdate(id, fields) {
-  const updates = Object.entries(fields).filter(([key]) => ADMIN_EDITABLE_FIELDS.includes(key));
+  const updates = Object.entries(fields).filter(([key]) =>
+    ADMIN_EDITABLE_FIELDS.includes(key),
+  );
   if (updates.length === 0) {
-    throw badRequest(`No editable fields provided. Allowed: ${ADMIN_EDITABLE_FIELDS.join(", ")}`);
+    throw badRequest(
+      `No editable fields provided. Allowed: ${ADMIN_EDITABLE_FIELDS.join(", ")}`,
+    );
   }
 
   return updates.map(([key, value]) => {
     switch (key) {
       case "name":
-        if (typeof value !== "string" || !value.trim()) throw badRequest("name must be a non-empty string");
+        if (typeof value !== "string" || !value.trim())
+          throw badRequest("name must be a non-empty string");
         return [key, value.trim()];
       case "dept":
       case "estate":
-        if (typeof value !== "string") throw badRequest(`${key} must be a string`);
+        if (typeof value !== "string")
+          throw badRequest(`${key} must be a string`);
         return [key, value.trim()];
       case "role":
-        if (!VALID_ROLES.includes(value)) throw badRequest("role must be 'user' or 'admin'");
+        if (!VALID_ROLES.includes(value))
+          throw badRequest("role must be 'user' or 'admin'");
         return [key, value];
       case "phone":
         if (typeof value !== "string" || !PHONE_PATTERN.test(value)) {
-          throw badRequest("phone must be in the format 07XXXXXXXX or 01XXXXXXXX");
+          throw badRequest(
+            "phone must be in the format 07XXXXXXXX or 01XXXXXXXX",
+          );
         }
         return [key, value];
       case "username": {
-        const normalized = typeof value === "string" ? value.toLowerCase().trim() : "";
+        const normalized =
+          typeof value === "string" ? value.toLowerCase().trim() : "";
         if (!USERNAME_PATTERN.test(normalized)) {
-          throw badRequest("Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)");
+          throw badRequest(
+            "Username must be 3-30 characters (letters, numbers, dots, dashes, underscores only)",
+          );
         }
-        const clash = db.prepare("SELECT id FROM users WHERE username = ? AND id != ?").get(normalized, id);
+        const clash = db
+          .prepare("SELECT id FROM users WHERE username = ? AND id != ?")
+          .get(normalized, id);
         if (clash) throw badRequest("That username is already taken", 409);
         return [key, normalized];
       }
       case "rating":
-        if (typeof value !== "number" || !(value >= 0 && value <= 5)) throw badRequest("rating must be a number between 0 and 5");
+        if (typeof value !== "number" || !(value >= 0 && value <= 5))
+          throw badRequest("rating must be a number between 0 and 5");
         return [key, value];
       case "reviews":
       case "swaps":
-        if (!Number.isInteger(value) || value < 0) throw badRequest(`${key} must be a whole number, 0 or more`);
+        if (!Number.isInteger(value) || value < 0)
+          throw badRequest(`${key} must be a whole number, 0 or more`);
         return [key, value];
       case "online":
-        if (typeof value !== "boolean" && value !== 0 && value !== 1) throw badRequest("online must be true or false");
+        if (typeof value !== "boolean" && value !== 0 && value !== 1)
+          throw badRequest("online must be true or false");
         return [key, value ? 1 : 0];
       default:
         return [key, value];
@@ -997,11 +1597,15 @@ export async function adminUpdateUser(id, fields) {
   const updates = validateAdminUpdate(id, fields);
   const setClause = updates.map(([key]) => `${key} = ?`).join(", ");
   const values = updates.map(([, value]) => value);
-  const result = db.prepare(`UPDATE users SET ${setClause} WHERE id = ?`).run(...values, id);
+  const result = db
+    .prepare(`UPDATE users SET ${setClause} WHERE id = ?`)
+    .run(...values, id);
   if (!result.changes) return null;
 
   const row = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
-  const profile = db.prepare("SELECT coins FROM profiles WHERE user_id = ?").get(id);
+  const profile = db
+    .prepare("SELECT coins FROM profiles WHERE user_id = ?")
+    .get(id);
   return { ...toSafeUser(row), coins: profile?.coins ?? 0 };
 }
 
@@ -1013,21 +1617,41 @@ export async function adminDeleteUser(id) {
 // ---------------------------------------------------------------------------
 // Admin audit log
 // ---------------------------------------------------------------------------
-export async function logAdminAction({ adminId, adminUsername, action, targetUserId, targetUsername, details }) {
-  db.prepare(`
+export async function logAdminAction({
+  adminId,
+  adminUsername,
+  action,
+  targetUserId,
+  targetUsername,
+  details,
+}) {
+  db.prepare(
+    `
     INSERT INTO admin_audit_log (admin_id, admin_username, action, target_user_id, target_username, details)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(adminId, adminUsername, action, targetUserId ?? null, targetUsername ?? null, details ?? null);
+  `,
+  ).run(
+    adminId,
+    adminUsername,
+    action,
+    targetUserId ?? null,
+    targetUsername ?? null,
+    details ?? null,
+  );
 }
 
 export async function getAdminAuditLog() {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT id, admin_username AS adminUsername, action, target_username AS targetUsername,
            details, created_at AS createdAt
     FROM admin_audit_log
     ORDER BY id DESC
     LIMIT 200
-  `).all();
+  `,
+    )
+    .all();
 }
 
 export async function closeDatabase() {

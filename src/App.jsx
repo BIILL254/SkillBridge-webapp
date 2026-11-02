@@ -23,14 +23,41 @@ import ForcePasswordChangeScreen from "./pages/ForcePasswordChangeScreen.jsx";
 // names, so "Agriculture" used to match nobody. Match the tag against the
 // person's skills AND their dept, plus a few related keywords for categories.
 const TAG_KEYWORDS = {
-  agriculture: ["agronomy", "soil", "irrigation", "crop", "farm", "livestock", "organic", "pest", "greenhouse"],
-  "water treatment": ["purification", "filtration", "chlorination", "desalination", "water quality", "borehole", "reverse osmosis"],
-  "water sales": ["water vending", "water delivery", "bulk water", "bottled water", "water refill", "water distribution"],
+  agriculture: [
+    "agronomy",
+    "soil",
+    "irrigation",
+    "crop",
+    "farm",
+    "livestock",
+    "organic",
+    "pest",
+    "greenhouse",
+  ],
+  "water treatment": [
+    "purification",
+    "filtration",
+    "chlorination",
+    "desalination",
+    "water quality",
+    "borehole",
+    "reverse osmosis",
+  ],
+  "water sales": [
+    "water vending",
+    "water delivery",
+    "bulk water",
+    "bottled water",
+    "water refill",
+    "water distribution",
+  ],
 };
 function matchesTag(u, tag) {
   const t = tag.toLowerCase();
   const terms = [t, ...(TAG_KEYWORDS[t] || [])];
-  const haystack = [...u.offers, ...u.wants, u.dept || ""].map((s) => s.toLowerCase());
+  const haystack = [...u.offers, ...u.wants, u.dept || ""].map((s) =>
+    s.toLowerCase(),
+  );
   return haystack.some((s) => terms.some((term) => s.includes(term)));
 }
 
@@ -63,7 +90,10 @@ export default function App() {
   function showToast(msg, type = "") {
     clearTimeout(toastTimer.current);
     setToast({ show: true, msg, type });
-    toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), 2800);
+    toastTimer.current = setTimeout(
+      () => setToast((t) => ({ ...t, show: false })),
+      2800,
+    );
   }
 
   // Applies a profile object returned by the API (offers/wants/coins/history)
@@ -82,12 +112,13 @@ export default function App() {
     async function loadAll() {
       setLoading(true);
       try {
-        const [usersData, requestsData, sessionsData, profileData] = await Promise.all([
-          api.getUsers(),
-          api.getRequests(),
-          api.getSessions(),
-          api.getProfile(),
-        ]);
+        const [usersData, requestsData, sessionsData, profileData] =
+          await Promise.all([
+            api.getUsers(),
+            api.getRequests(),
+            api.getSessions(),
+            api.getProfile(),
+          ]);
         if (cancelled) return;
         setUsers(usersData);
         setRequests(requestsData);
@@ -97,20 +128,33 @@ export default function App() {
         // toId is the right field now that fromId is always the real
         // logged-in sender (see sendRequest below), not the target's id.
         // requests to a Maji vendor have no toId; they are keyed "v:<vendorId>"
-        setSentSet(new Set(requestsData.filter((r) => r.status === "sent").map((r) => (r.vendorId != null ? `v:${r.vendorId}` : r.toId))));
+        setSentSet(
+          new Set(
+            requestsData
+              .filter((r) => r.status === "sent")
+              .map((r) => (r.vendorId != null ? `v:${r.vendorId}` : r.toId)),
+          ),
+        );
         if (usersData.length) setSessWith(usersData[0].name);
         setLoadError("");
       } catch (err) {
-        if (!cancelled) setLoadError("Couldn't reach the SkillBridge API. Is the backend running? (npm run server)");
+        if (!cancelled)
+          setLoadError(
+            "Couldn't reach the SkillBridge API. Is the backend running? (npm run server)",
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
     loadAll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
-  function nav(p) { setPage(p); }
+  function nav(p) {
+    setPage(p);
+  }
 
   /* ---------- discover: search / filter / request modal ---------- */
   const [search, setSearch] = useState("");
@@ -123,7 +167,9 @@ export default function App() {
   const [reqCoinWantSel, setReqCoinWantSel] = useState("");
   const [reqMsg, setReqMsg] = useState("");
 
-  function setTag(tag) { setActiveTag((t) => (t === tag ? "" : tag)); }
+  function setTag(tag) {
+    setActiveTag((t) => (t === tag ? "" : tag));
+  }
 
   function openReqModal(user) {
     if (!user || sentSet.has(user.id)) return;
@@ -135,7 +181,10 @@ export default function App() {
     setReqMsg("");
     setReqModalOpen(true);
   }
-  function closeReqModal() { setReqModalOpen(false); setReqModalUser(null); }
+  function closeReqModal() {
+    setReqModalOpen(false);
+    setReqModalUser(null);
+  }
 
   // A Maji vendor isn't a SkillBridge user, so build a user-shaped object for
   // the same request modal. "offers" is the topic the filter is on, so the
@@ -146,7 +195,12 @@ export default function App() {
       isVendor: true,
       vendorId: v.vendorId,
       name: v.businessName,
-      initials: String(v.businessName || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(),
+      initials: String(v.businessName || "?")
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
       rating: Number(v.rating ?? 0).toFixed(1),
       reviews: 0,
       offers: [activeTag || "Water Sales"],
@@ -156,15 +210,24 @@ export default function App() {
   async function sendRequest() {
     if (!reqModalUser) return;
     const msg = reqMsg.trim();
-    if (!msg) { showToast("Please add a message", "error"); return; }
+    if (!msg) {
+      showToast("Please add a message", "error");
+      return;
+    }
 
     const offer = exchangeType === "swap" ? reqOfferSel : null;
     const want = exchangeType === "swap" ? reqWantSel : reqCoinWantSel;
 
     try {
       if (exchangeType === "coin") {
-        if (myCoins < 3) { showToast("Not enough Skill Coins!", "error"); return; }
-        const updatedProfile = await api.adjustCoins(-3, `Requested skill: ${want} from ${reqModalUser.name}`);
+        if (myCoins < 3) {
+          showToast("Not enough Skill Coins!", "error");
+          return;
+        }
+        const updatedProfile = await api.adjustCoins(
+          -3,
+          `Requested skill: ${want} from ${reqModalUser.name}`,
+        );
         applyProfile(updatedProfile);
         showToast("3 Skill Coins spent · Request sent ✓", "success");
       } else {
@@ -172,7 +235,14 @@ export default function App() {
       }
 
       const payload = reqModalUser.isVendor
-        ? { vendorId: reqModalUser.vendorId, vendorName: reqModalUser.name, offer, want, type: exchangeType, msg }
+        ? {
+            vendorId: reqModalUser.vendorId,
+            vendorName: reqModalUser.name,
+            offer,
+            want,
+            type: exchangeType,
+            msg,
+          }
         : { toId: reqModalUser.id, offer, want, type: exchangeType, msg };
       const newRequest = await api.createRequest(payload);
       setRequests((rs) => [...rs, newRequest]);
@@ -195,7 +265,10 @@ export default function App() {
     try {
       const updatedProfile = await api.addProfileSkill(type, v);
       applyProfile(updatedProfile);
-      showToast(type === "offer" ? `${v} added · +1 Skill Coin ◈` : `${v} added ✓`, "success");
+      showToast(
+        type === "offer" ? `${v} added · +1 Skill Coin ◈` : `${v} added ✓`,
+        "success",
+      );
     } catch (err) {
       showToast("Couldn't add that skill", "error");
     }
@@ -219,11 +292,15 @@ export default function App() {
 
   async function acceptReq(id) {
     const req = requests.find((r) => r.id === id);
-    const partnerName = users.find((u) => u.id === (req?.fromId || req?.toId))?.name || "User";
+    const partnerName =
+      users.find((u) => u.id === (req?.fromId || req?.toId))?.name || "User";
     try {
       const updated = await api.updateRequestStatus(id, "accepted");
       setRequests((rs) => rs.map((r) => (r.id === id ? updated : r)));
-      const updatedProfile = await api.adjustCoins(2, `Accepted swap request from ${partnerName}`);
+      const updatedProfile = await api.adjustCoins(
+        2,
+        `Accepted swap request from ${partnerName}`,
+      );
       applyProfile(updatedProfile);
       showToast("Exchange accepted! +2 Skill Coins ◈", "success");
     } catch (err) {
@@ -258,25 +335,49 @@ export default function App() {
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
   }
-  function selectDay(d) { setSelectedDate({ d, m: calMonth, y: calYear }); }
+  function selectDay(d) {
+    setSelectedDate({ d, m: calMonth, y: calYear });
+  }
 
   const [sessionModalOpen, setSessionModalOpen] = useState(false);
   const [sessWith, setSessWith] = useState(""); // filled in once users load, see loadAll()
   const [sessSkill, setSessSkill] = useState("");
-  const [sessDate, setSessDate] = useState(new Date().toISOString().split("T")[0]);
+  const [sessLocation, setSessLocation] = useState(""); // "" = online
+  const [sessDate, setSessDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [sessTime, setSessTime] = useState("");
   const [sessDur, setSessDur] = useState(60);
 
+  // location pre-fills the meeting place (used by "Plan a session here" on the Schedule page)
+  function openSessionModal(location = "") {
+    setSessLocation(location);
+    setSessionModalOpen(true);
+  }
+
   async function bookSession() {
     const skill = sessSkill.trim();
-    if (!skill || !sessDate || !sessTime) { showToast("Please fill in all fields", "error"); return; }
+    if (!skill || !sessDate || !sessTime) {
+      showToast("Please fill in all fields", "error");
+      return;
+    }
     try {
       const newSession = await api.createSession({
-        with: sessWith, skill, date: sessDate, time: sessTime, dur: sessDur, color: getAvatarColor(sessWith),
+        with: sessWith,
+        skill,
+        date: sessDate,
+        time: sessTime,
+        dur: sessDur,
+        color: getAvatarColor(sessWith),
+        ...(sessLocation ? { location: sessLocation } : {}),
       });
       setSessions((s) => [...s, newSession]);
       setSessionModalOpen(false);
-      showToast(`Session booked with ${sessWith} ✓`, "success");
+      setSessLocation("");
+      showToast(
+        `Session booked with ${sessWith}${newSession.location ? ` in ${newSession.location}` : ""} ✓`,
+        "success",
+      );
     } catch (err) {
       showToast("Couldn't book that session", "error");
     }
@@ -293,12 +394,20 @@ export default function App() {
   }
 
   async function submitReview() {
-    if (!reviewStar) { showToast("Please select a rating", "error"); return; }
+    if (!reviewStar) {
+      showToast("Please select a rating", "error");
+      return;
+    }
     const sess = sessions.find((s) => s.id === reviewSessionId);
     try {
       const updated = await api.markSessionReviewed(reviewSessionId);
-      setSessions((ss) => ss.map((s) => (s.id === reviewSessionId ? updated : s)));
-      const updatedProfile = await api.adjustCoins(1, `Reviewed session with ${sess?.with || "partner"}`);
+      setSessions((ss) =>
+        ss.map((s) => (s.id === reviewSessionId ? updated : s)),
+      );
+      const updatedProfile = await api.adjustCoins(
+        1,
+        `Reviewed session with ${sess?.with || "partner"}`,
+      );
       applyProfile(updatedProfile);
       setReviewModalOpen(false);
       showToast("Review submitted · +1 Skill Coin ◈", "success");
@@ -316,13 +425,16 @@ export default function App() {
   }
   if (search) {
     const q = search.toLowerCase();
-    discoverList = discoverList.filter((u) =>
-      u.name.toLowerCase().includes(q) ||
-      u.dept.toLowerCase().includes(q) ||
-      [...u.offers, ...u.wants].some((s) => s.toLowerCase().includes(q))
+    discoverList = discoverList.filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.dept.toLowerCase().includes(q) ||
+        [...u.offers, ...u.wants].some((s) => s.toLowerCase().includes(q)),
     );
   }
-  discoverList.sort((a, b) => calcMatch(b, myOffers, myWants) - calcMatch(a, myOffers, myWants));
+  discoverList.sort(
+    (a, b) => calcMatch(b, myOffers, myWants) - calcMatch(a, myOffers, myWants),
+  );
 
   // ---------- auth gating: these come before the data-loading states,
   // since there's no point fetching SkillBridge data for someone who
@@ -345,7 +457,12 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen" role="status" aria-live="polite" aria-label="Loading SkillBridge">
+      <div
+        className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading SkillBridge"
+      >
         <div className="sticky top-0 z-40 bg-[var(--sb-surface)]/90 backdrop-blur-xl border-b border-[var(--sb-border)] h-16 flex items-center gap-3 px-6">
           <div className="w-8 h-8 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse" />
           <div className="w-28 h-4 rounded bg-[var(--sb-surface-alt)] animate-pulse" />
@@ -389,64 +506,118 @@ export default function App() {
 
   return (
     <div className="bg-[var(--sb-bg)] text-[var(--sb-text-primary)] min-h-screen">
-      <Nav page={page} nav={nav} search={search} setSearch={setSearch} myCoins={myCoins} incomingCount={incomingCount} theme={theme} onToggleTheme={toggleTheme} user={user} onLogout={logout} />
+      <Nav
+        page={page}
+        nav={nav}
+        search={search}
+        setSearch={setSearch}
+        myCoins={myCoins}
+        incomingCount={incomingCount}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        user={user}
+        onLogout={logout}
+      />
 
       {page === "discover" && (
         <DiscoverPage
           list={discoverList}
-          myOffers={myOffers} myWants={myWants}
-          activeTag={activeTag} setTag={setTag}
-          sentSet={sentSet} onRequest={openReqModal} onRequestVendor={openVendorReqModal} estate={user.estate}
+          myOffers={myOffers}
+          myWants={myWants}
+          activeTag={activeTag}
+          setTag={setTag}
+          sentSet={sentSet}
+          onRequest={openReqModal}
+          onRequestVendor={openVendorReqModal}
+          estate={user.estate}
         />
       )}
       {page === "profile" && (
         <ProfilePage
           user={user}
-          myOffers={myOffers} myWants={myWants} myCoins={myCoins} sessionsCount={sessions.length}
+          myOffers={myOffers}
+          myWants={myWants}
+          myCoins={myCoins}
+          sessionsCount={sessions.length}
           coinHistory={coinHistory}
-          onAddSkill={addSkill} onRemoveSkill={removeSkill} nav={nav}
+          onAddSkill={addSkill}
+          onRemoveSkill={removeSkill}
+          nav={nav}
         />
       )}
       {page === "requests" && (
         <RequestsPage
-          requests={requests} users={users} activeReqTab={activeReqTab} setActiveReqTab={setActiveReqTab}
-          incomingCount={incomingCount} onAccept={acceptReq} onDecline={declineReq} decliningId={decliningId}
+          requests={requests}
+          users={users}
+          activeReqTab={activeReqTab}
+          setActiveReqTab={setActiveReqTab}
+          incomingCount={incomingCount}
+          onAccept={acceptReq}
+          onDecline={declineReq}
+          decliningId={decliningId}
           currentUserId={user.id}
         />
       )}
       {page === "schedule" && (
         <SchedulePage
-          calYear={calYear} calMonth={calMonth} selectedDate={selectedDate}
-          sessions={sessions} estate={user.estate} onChangeMonth={changeMonth} onSelectDay={selectDay}
-          onOpenSessionModal={() => setSessionModalOpen(true)} onOpenReview={openReview}
+          calYear={calYear}
+          calMonth={calMonth}
+          selectedDate={selectedDate}
+          sessions={sessions}
+          estate={user.estate}
+          onChangeMonth={changeMonth}
+          onSelectDay={selectDay}
+          onOpenSessionModal={() => openSessionModal()}
+          onPlanHere={openSessionModal}
+          onOpenReview={openReview}
         />
       )}
       {page === "admin" && user.role === "admin" && <AdminPage />}
 
       <RequestModal
-        open={reqModalOpen} user={reqModalUser} myOffers={myOffers}
-        exchangeType={exchangeType} setExchangeType={setExchangeTypeState}
-        offerSel={reqOfferSel} setOfferSel={setReqOfferSel}
-        wantSel={reqWantSel} setWantSel={setReqWantSel}
-        coinWantSel={reqCoinWantSel} setCoinWantSel={setReqCoinWantSel}
-        msg={reqMsg} setMsg={setReqMsg}
-        myCoins={myCoins} onClose={closeReqModal} onSend={sendRequest}
+        open={reqModalOpen}
+        user={reqModalUser}
+        myOffers={myOffers}
+        exchangeType={exchangeType}
+        setExchangeType={setExchangeTypeState}
+        offerSel={reqOfferSel}
+        setOfferSel={setReqOfferSel}
+        wantSel={reqWantSel}
+        setWantSel={setReqWantSel}
+        coinWantSel={reqCoinWantSel}
+        setCoinWantSel={setReqCoinWantSel}
+        msg={reqMsg}
+        setMsg={setReqMsg}
+        myCoins={myCoins}
+        onClose={closeReqModal}
+        onSend={sendRequest}
       />
 
       <SessionModal
-        open={sessionModalOpen} onClose={() => setSessionModalOpen(false)}
+        open={sessionModalOpen}
+        onClose={() => setSessionModalOpen(false)}
         users={users}
-        withUser={sessWith} setWithUser={setSessWith}
-        skill={sessSkill} setSkill={setSessSkill}
-        date={sessDate} setDate={setSessDate}
-        time={sessTime} setTime={setSessTime}
-        dur={sessDur} setDur={setSessDur}
+        withUser={sessWith}
+        setWithUser={setSessWith}
+        skill={sessSkill}
+        setSkill={setSessSkill}
+        location={sessLocation}
+        setLocation={setSessLocation}
+        date={sessDate}
+        setDate={setSessDate}
+        time={sessTime}
+        setTime={setSessTime}
+        dur={sessDur}
+        setDur={setSessDur}
         onBook={bookSession}
       />
 
       <ReviewModal
-        open={reviewModalOpen} onClose={() => setReviewModalOpen(false)}
-        session={reviewSession} star={reviewStar} setStar={setReviewStar}
+        open={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        session={reviewSession}
+        star={reviewStar}
+        setStar={setReviewStar}
         onSubmit={submitReview}
       />
 

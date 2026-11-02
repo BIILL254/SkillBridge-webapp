@@ -3,8 +3,16 @@ import { formatDate } from "../utils.js";
 import LogisticsCard from "../components/LogisticsCard.jsx";
 
 export default function SchedulePage({
-  calYear, calMonth, selectedDate, sessions, estate,
-  onChangeMonth, onSelectDay, onOpenSessionModal, onOpenReview,
+  calYear,
+  calMonth,
+  selectedDate,
+  sessions,
+  estate,
+  onChangeMonth,
+  onSelectDay,
+  onOpenSessionModal,
+  onPlanHere,
+  onOpenReview,
 }) {
   return (
     <div id="page-schedule" className="page on max-w-5xl mx-auto px-6 py-10">
@@ -12,31 +20,53 @@ export default function SchedulePage({
         <h1 className="text-3xl font-semibold tracking-tight mb-2 font-display">
           My <em className="text-emerald-500 not-italic">Schedule</em>
         </h1>
-        <p className="text-sm text-[var(--sb-text-secondary)]">Upcoming sessions and availability.</p>
+        <p className="text-sm text-[var(--sb-text-secondary)]">
+          Upcoming sessions and availability.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
         <CalendarCard
-          calYear={calYear} calMonth={calMonth} selectedDate={selectedDate}
-          sessions={sessions} onChangeMonth={onChangeMonth} onSelectDay={onSelectDay}
+          calYear={calYear}
+          calMonth={calMonth}
+          selectedDate={selectedDate}
+          sessions={sessions}
+          onChangeMonth={onChangeMonth}
+          onSelectDay={onSelectDay}
         />
         <div className="flex flex-col gap-5">
           <SessionsCard
-            selectedDate={selectedDate} sessions={sessions}
-            onOpenSessionModal={onOpenSessionModal} onOpenReview={onOpenReview}
+            selectedDate={selectedDate}
+            sessions={sessions}
+            onOpenSessionModal={onOpenSessionModal}
+            onOpenReview={onOpenReview}
           />
-          <LogisticsCard estate={estate} />
+          <LogisticsCard
+            estate={estate}
+            sessions={sessions}
+            onPlanHere={onPlanHere}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth, onSelectDay }) {
+function CalendarCard({
+  calYear,
+  calMonth,
+  selectedDate,
+  sessions,
+  onChangeMonth,
+  onSelectDay,
+}) {
   const sessionDays = new Set(
     sessions
-      .filter((s) => { const d = new Date(s.date); return d.getFullYear() === calYear && d.getMonth() === calMonth; })
-      .map((s) => new Date(s.date).getDate())
+      .filter((s) => {
+        const d = new Date(s.date);
+        return d.getFullYear() === calYear && d.getMonth() === calMonth;
+      })
+      .map((s) => new Date(s.date).getDate()),
   );
 
   // getDay() returns 0 for Sunday — shift so the grid starts on Monday
@@ -49,8 +79,14 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
   for (let i = 0; i < offset; i++) cells.push(<div key={"e" + i} />);
 
   for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = today.getDate() === d && today.getMonth() === calMonth && today.getFullYear() === calYear;
-    const isSelected = selectedDate?.d === d && selectedDate?.m === calMonth && selectedDate?.y === calYear;
+    const isToday =
+      today.getDate() === d &&
+      today.getMonth() === calMonth &&
+      today.getFullYear() === calYear;
+    const isSelected =
+      selectedDate?.d === d &&
+      selectedDate?.m === calMonth &&
+      selectedDate?.y === calYear;
     const hasSession = sessionDays.has(d);
 
     const cellClass = isSelected
@@ -76,14 +112,16 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
             aria-hidden="true"
           />
         )}
-      </button>
+      </button>,
     );
   }
 
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-5">
-        <span className="font-semibold text-base font-display">{MONTH_NAMES[calMonth]} {calYear}</span>
+        <span className="font-semibold text-base font-display">
+          {MONTH_NAMES[calMonth]} {calYear}
+        </span>
         <div className="flex gap-2">
           <button
             onClick={() => onChangeMonth(-1)}
@@ -103,7 +141,12 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
       </div>
       <div className="grid grid-cols-7 gap-1.5">
         {WEEK_DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--sb-text-tertiary)] py-1">{d}</div>
+          <div
+            key={d}
+            className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--sb-text-tertiary)] py-1"
+          >
+            {d}
+          </div>
         ))}
         {cells}
       </div>
@@ -111,19 +154,36 @@ function CalendarCard({ calYear, calMonth, selectedDate, sessions, onChangeMonth
   );
 }
 
-function SessionsCard({ selectedDate, sessions, onOpenSessionModal, onOpenReview }) {
+function SessionsCard({
+  selectedDate,
+  sessions,
+  onOpenSessionModal,
+  onOpenReview,
+}) {
   const list = selectedDate
-    ? sessions.filter((s) => { const d = new Date(s.date); return d.getDate() === selectedDate.d && d.getMonth() === selectedDate.m; })
-    : sessions.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
+    ? sessions.filter((s) => {
+        const d = new Date(s.date);
+        return (
+          d.getDate() === selectedDate.d && d.getMonth() === selectedDate.m
+        );
+      })
+    : sessions
+        .slice()
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 5);
 
-  const title = selectedDate ? formatDate(new Date(selectedDate.y, selectedDate.m, selectedDate.d)) : "Upcoming sessions";
+  const title = selectedDate
+    ? formatDate(new Date(selectedDate.y, selectedDate.m, selectedDate.d))
+    : "Upcoming sessions";
 
   return (
     <div className="card">
       <div className="font-semibold text-sm mb-3.5 font-display">{title}</div>
 
       {list.length === 0 ? (
-        <div className="text-center py-8 text-[var(--sb-text-tertiary)] text-sm">No sessions{selectedDate ? " on this day" : ""}</div>
+        <div className="text-center py-8 text-[var(--sb-text-tertiary)] text-sm">
+          No sessions{selectedDate ? " on this day" : ""}
+        </div>
       ) : (
         list.map((s, i) => (
           <div
@@ -131,13 +191,27 @@ function SessionsCard({ selectedDate, sessions, onOpenSessionModal, onOpenReview
             className={`flex items-start gap-3 py-3.5 ${i === list.length - 1 ? "" : "border-b border-[var(--sb-border-subtle)]"}`}
           >
             <div className="w-10 flex-shrink-0 text-center">
-              <div className="font-semibold text-emerald-600 text-xs">{s.time}</div>
+              <div className="font-semibold text-emerald-600 text-xs">
+                {s.time}
+              </div>
             </div>
-            <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ background: s.color }} />
+            <div
+              className="w-2 h-2 rounded-full mt-1 flex-shrink-0"
+              style={{ background: s.color }}
+            />
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[var(--sb-text-primary)]">{s.with}</div>
-              <div className="text-xs text-[var(--sb-text-tertiary)]">{s.skill}</div>
-              <div className="text-xs text-[var(--sb-text-tertiary)]">{s.dur} min</div>
+              <div className="text-sm font-medium text-[var(--sb-text-primary)]">
+                {s.with}
+              </div>
+              <div className="text-xs text-[var(--sb-text-tertiary)]">
+                {s.skill}
+              </div>
+              <div className="text-xs text-[var(--sb-text-tertiary)]">
+                {s.dur} min
+              </div>
+              {s.location && (
+                <div className="text-xs text-emerald-700">📍 {s.location}</div>
+              )}
             </div>
             {!s.reviewed ? (
               <button

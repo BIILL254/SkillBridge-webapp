@@ -1,12 +1,26 @@
 import { request, app, login, auth } from "./helpers.js";
 
 let token;
-beforeAll(async () => { ({ token } = await login("billamani")); });
+beforeAll(async () => {
+  ({ token } = await login("billamani"));
+});
 
-const valid = (over = {}) => ({ with: "Jessica", skill: "UI/UX basics", date: "2026-10-01", time: "10:30", dur: 45, color: "#1FD4A0", ...over });
+const valid = (over = {}) => ({
+  with: "Jessica",
+  skill: "UI/UX basics",
+  date: "2026-10-01",
+  time: "10:30",
+  dur: 45,
+  color: "#1FD4A0",
+  ...over,
+});
 
 describe("sessions require login", () => {
-  it.each([["get", "/api/sessions"], ["post", "/api/sessions"], ["patch", "/api/sessions/1"]])("%s %s -> 401 with no token", async (m, url) => {
+  it.each([
+    ["get", "/api/sessions"],
+    ["post", "/api/sessions"],
+    ["patch", "/api/sessions/1"],
+  ])("%s %s -> 401 with no token", async (m, url) => {
     expect((await request(app)[m](url).send({})).status).toBe(401);
   });
 });
@@ -17,9 +31,14 @@ describe("GET /api/sessions", () => {
     expect(res.status).toBe(200);
     expect(res.body.length).toBe(3);
     expect(res.body[0]).toEqual({
-      id: expect.any(Number), with: expect.any(String), skill: expect.any(String),
-      date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), time: expect.stringMatching(/^\d{2}:\d{2}$/),
-      dur: expect.any(Number), color: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/), reviewed: false,
+      id: expect.any(Number),
+      with: expect.any(String),
+      skill: expect.any(String),
+      date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      time: expect.stringMatching(/^\d{2}:\d{2}$/),
+      dur: expect.any(Number),
+      color: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/),
+      reviewed: false,
     });
   });
 
@@ -32,28 +51,59 @@ describe("GET /api/sessions", () => {
 
 describe("POST /api/sessions", () => {
   it("books a session: 201 and the full session back", async () => {
-    const res = await request(app).post("/api/sessions").set(auth(token)).send(valid());
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid());
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ id: expect.any(Number), with: "Jessica", skill: "UI/UX basics", date: "2026-10-01", time: "10:30", dur: 45, color: "#1FD4A0", reviewed: false });
+    expect(res.body).toEqual({
+      id: expect.any(Number),
+      with: "Jessica",
+      skill: "UI/UX basics",
+      date: "2026-10-01",
+      time: "10:30",
+      dur: 45,
+      color: "#1FD4A0",
+      reviewed: false,
+    });
   });
 
   it("the booking really exists afterwards (re-fetch)", async () => {
-    const created = await request(app).post("/api/sessions").set(auth(token)).send(valid({ skill: "Findable skill" }));
+    const created = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ skill: "Findable skill" }));
     const list = await request(app).get("/api/sessions").set(auth(token));
-    expect(list.body.find((s) => s.id === created.body.id)?.skill).toBe("Findable skill");
+    expect(list.body.find((s) => s.id === created.body.id)?.skill).toBe(
+      "Findable skill",
+    );
   });
 
   it("applies defaults when dur and color are omitted (60 minutes, emerald)", async () => {
-    const res = await request(app).post("/api/sessions").set(auth(token)).send({ with: "K.Dot", skill: "Beats", date: "2026-10-02", time: "09:00" });
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send({
+        with: "K.Dot",
+        skill: "Beats",
+        date: "2026-10-02",
+        time: "09:00",
+      });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ dur: 60, color: "#10B981" });
   });
 
-  it.each(["with", "skill", "date", "time"])("rejects a missing %s with 400", async (field) => {
-    const res = await request(app).post("/api/sessions").set(auth(token)).send(valid({ [field]: undefined }));
-    expect(res.status).toBe(400);
-    expect(res.body.error).toMatch(/required/i);
-  });
+  it.each(["with", "skill", "date", "time"])(
+    "rejects a missing %s with 400",
+    async (field) => {
+      const res = await request(app)
+        .post("/api/sessions")
+        .set(auth(token))
+        .send(valid({ [field]: undefined }));
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/required/i);
+    },
+  );
 
   it.each([
     ["dur as a string", { dur: "60" }],
@@ -70,22 +120,37 @@ describe("POST /api/sessions", () => {
     ["a time with seconds", { time: "10:30:00" }],
     ["a non-hex color", { color: "green" }],
   ])("rejects %s with 400 (never a 500)", async (_l, over) => {
-    const res = await request(app).post("/api/sessions").set(auth(token)).send(valid(over));
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid(over));
     expect(res.status).toBe(400);
     expect(typeof res.body.error).toBe("string");
   });
 
   it("boundary values are accepted: 00:00, 23:59 and dur 1", async () => {
-    const a = await request(app).post("/api/sessions").set(auth(token)).send(valid({ time: "00:00", dur: 1 }));
-    const b = await request(app).post("/api/sessions").set(auth(token)).send(valid({ time: "23:59", dur: 1440 }));
+    const a = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ time: "00:00", dur: 1 }));
+    const b = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ time: "23:59", dur: 1440 }));
     expect(a.status).toBe(201);
     expect(b.status).toBe(201);
   });
 
   it("a rejected booking leaves nothing behind", async () => {
-    const before = (await request(app).get("/api/sessions").set(auth(token))).body.length;
-    await request(app).post("/api/sessions").set(auth(token)).send(valid({ dur: "bad" }));
-    expect((await request(app).get("/api/sessions").set(auth(token))).body.length).toBe(before);
+    const before = (await request(app).get("/api/sessions").set(auth(token)))
+      .body.length;
+    await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ dur: "bad" }));
+    expect(
+      (await request(app).get("/api/sessions").set(auth(token))).body.length,
+    ).toBe(before);
   });
 });
 
@@ -106,12 +171,96 @@ describe("PATCH /api/sessions/:id (mark reviewed)", () => {
   });
 
   it("returns 404 for a session that does not exist", async () => {
-    const res = await request(app).patch("/api/sessions/99999").set(auth(token));
+    const res = await request(app)
+      .patch("/api/sessions/99999")
+      .set(auth(token));
     expect(res.status).toBe(404);
     expect(res.body.error).toMatch(/not found/i);
   });
 
   it("returns 404 (not a crash) for a non-numeric id", async () => {
-    expect((await request(app).patch("/api/sessions/abc").set(auth(token))).status).toBe(404);
+    expect(
+      (await request(app).patch("/api/sessions/abc").set(auth(token))).status,
+    ).toBe(404);
+  });
+});
+
+describe("sessions with a meeting place (location)", () => {
+  let withPlace;
+
+  it("creates a session at a place; the place is trimmed and returned", async () => {
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ location: "  Westlands  " }));
+    expect(res.status).toBe(201);
+    expect(res.body.location).toBe("Westlands");
+    withPlace = res.body.id;
+  });
+
+  it("GET /api/sessions includes the location on that session", async () => {
+    const res = await request(app).get("/api/sessions").set(auth(token));
+    expect(res.body.find((s) => s.id === withPlace).location).toBe("Westlands");
+  });
+
+  it("an online session (no location) keeps exactly the old shape: no location key", async () => {
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid());
+    expect(res.status).toBe(201);
+    expect(res.body).not.toHaveProperty("location");
+  });
+
+  it("location: null is the same as leaving it out (online)", async () => {
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ location: null }));
+    expect(res.status).toBe(201);
+    expect(res.body).not.toHaveProperty("location");
+  });
+
+  it("marking a session reviewed keeps its location", async () => {
+    const res = await request(app)
+      .patch(`/api/sessions/${withPlace}`)
+      .set(auth(token));
+    expect(res.status).toBe(200);
+    expect(res.body.reviewed).toBe(true);
+    expect(res.body.location).toBe("Westlands");
+  });
+
+  it("accepts a place of exactly 80 characters", async () => {
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ location: "x".repeat(80) }));
+    expect(res.status).toBe(201);
+  });
+
+  it.each([
+    ["a number", 42],
+    ["blank", "   "],
+    ["an object", { name: "Westlands" }],
+    ["81 characters", "x".repeat(81)],
+  ])("rejects a location that is %s (400)", async (_label, location) => {
+    const res = await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ location }));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/location/);
+  });
+
+  it("a rejected location saves nothing", async () => {
+    const before = (await request(app).get("/api/sessions").set(auth(token)))
+      .body.length;
+    await request(app)
+      .post("/api/sessions")
+      .set(auth(token))
+      .send(valid({ location: "   " }));
+    const after = (await request(app).get("/api/sessions").set(auth(token)))
+      .body.length;
+    expect(after).toBe(before);
   });
 });

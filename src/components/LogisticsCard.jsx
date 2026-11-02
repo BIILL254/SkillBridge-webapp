@@ -1,79 +1,113 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api.js";
+import { useMajiZones, homeKey } from "../useMajiZones.js";
 
-// Shown on the Schedule page for university students planning in-person
-// study sessions. Surfaces active water delivery zones and nearby vendor
-// stations by consuming Maji Website's upstream API (Week 10 & 11 Integration).
+// Shown on the Schedule page for students planning in-person study sessions.
 //
-// Week 11 Resilience:
-//   - Graceful fallback: when Maji is slow or down, shows saved data from memory
-//   - Displays visible banner: "Showing saved data from [time]. The partner is not responding."
-//   - If nothing is saved, displays a friendly "unavailable" message (never crashes or spins indefinitely)
-export default function LogisticsCard({ estate }) {
-  const [stations, setStations] = useState(null);
-  const [estates, setEstates] = useState([]);
-  const [topRated, setTopRated] = useState(new Map()); // vendorId -> top-rated vendor
-  const [source, setSource] = useState("mock");
-  const [isStale, setIsStale] = useState(false);
-  const [asOf, setAsOf] = useState(null);
-  const [error, setError] = useState(null);
-  const [showAllEstates, setShowAllEstates] = useState(false);
+// How it works:
+//   1. Maji's active delivery zones appear as chips. Pick one.
+//   2. The card loads the water vendors in that zone (Maji: GET /api/vendors/all?estate=)
+//      and shows the best ones, with a Call link.
+//   3. "Plan a session in <zone>" opens the booking form with that place filled in,
+//      and the session is saved with it.
+//
+// Resilience (Weeks 10 and 11): if Maji can't be reached the card shows a clear
+// message, or saved data with a banner when the server has a good copy. It never
+// crashes or goes blank.
+const SHOWN_VENDORS = 3;
+const timeOf = (iso) =>
+  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+export default function LogisticsCard({ estate, sessions = [], onPlanHere }) {
+  const { zones, source, stale, asOf, loading, error } = useMajiZones();
+  const [selected, setSelected] = useState(null);
+  const [showAllZones, setShowAllZones] = useState(false);
+  const userPicked = useRef(false);
+
+  const [vendors, setVendors] = useState(null); // null = loading
+  const [vendorsError, setVendorsError] = useState(null);
+  const [vendorsSavedAt, setVendorsSavedAt] = useState(null);
+
+  // The zone that matches the student's own estate, if Maji delivers there.
+  const homeZone = useMemo(() => {
+    const key = homeKey(estate);
+    if (!key) return null; // no estate set: don't match every zone
+    return (
+      zones.find((z) => z.toLowerCase() === key) ||
+      zones.find((z) => z.toLowerCase().includes(key)) ||
+      null
+    );
+  }, [zones, estate]);
+
+  // The next in-person session that has a place, so the card can offer it first.
+  const nextPlace = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (
+      sessions
+        .filter((s) => s.location && s.date >= today)
+        .sort((a, b) =>
+          `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
+        )[0] || null
+    );
+  }, [sessions]);
+
+  // Start on the zone that is most likely wanted: the next planned place, else home.
   useEffect(() => {
+    if (userPicked.current || selected || zones.length === 0) return;
+    const planned =
+      nextPlace &&
+      zones.find((z) => z.toLowerCase() === nextPlace.location.toLowerCase());
+    setSelected(planned || homeZone || null);
+  }, [zones, homeZone, nextPlace, selected]);
+
+  // Load the vendors in the selected zone.
+  useEffect(() => {
+    if (!selected) {
+      setVendors(null);
+      return undefined;
+    }
     let cancelled = false;
-    setError(null);
-    setIsStale(false);
-    setAsOf(null);
-
-    // Fetch vendors, active estates and top-rated vendors in parallel
-    Promise.allSettled([
-      api.getStations(estate),
-      api.getEstates("active"),
-      api.getTopRatedVendors(),
-    ]).then(([stationsRes, estatesRes, topRes]) => {
-      if (cancelled) return;
-
-      // Top-rated is a nice extra: if it fails, the card still works without stars.
-      if (topRes.status === "fulfilled") {
-        setTopRated(new Map((topRes.value.vendors || []).map((v) => [v.vendorId, v])));
-      }
-
-      let hasSuccess = false;
-
-      if (stationsRes.status === "fulfilled") {
-        setStations(stationsRes.value.stations || []);
-        if (stationsRes.value.source) setSource(stationsRes.value.source);
-        if (stationsRes.value.stale) {
-          setIsStale(true);
-          setAsOf(stationsRes.value.asOf);
-        }
-        hasSuccess = true;
-      }
-
-      if (estatesRes.status === "fulfilled") {
-        setEstates(estatesRes.value.estates || []);
-        if (estatesRes.value.source) setSource(estatesRes.value.source);
-        if (estatesRes.value.stale) {
-          setIsStale(true);
-          setAsOf(estatesRes.value.asOf);
-        }
-        hasSuccess = true;
-      }
-
-      if (!hasSuccess) {
-        // Both failed — partner is down or unreachable (Week 11 Part D)
-        const errMsg =
-          (stationsRes.status === "rejected" && stationsRes.reason?.message) ||
-          (estatesRes.status === "rejected" && estatesRes.reason?.message) ||
-          "Partner data is unavailable right now. Try again in a minute.";
-        setError(errMsg);
-      }
-    });
-
+    setVendors(null);
+    setVendorsError(null);
+    setVendorsSavedAt(null);
+    api
+      .getAllVendors(selected)
+      .then((res) => {
+        if (cancelled) return;
+        setVendors(res.vendors || []);
+        setVendorsSavedAt(res.stale ? res.asOf : null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setVendors([]);
+        setVendorsError(err.message || "Maji Website could not be reached.");
+      });
     return () => {
       cancelled = true;
     };
-  }, [estate]);
+  }, [selected]);
+
+  const pick = (zone) => {
+    userPicked.current = true;
+    setSelected(zone === selected ? null : zone);
+  };
+
+  // Best vendors first: verified, then highest rating.
+  const ranked = (vendors || [])
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(b.isVerified) - Number(a.isVerified) ||
+        Number(b.rating) - Number(a.rating),
+    );
+  const top = ranked.slice(0, SHOWN_VENDORS);
+
+  // Chips: the zone you picked and your home zone stay visible even when the list is collapsed.
+  const orderedZones = useMemo(() => {
+    const first = [selected, homeZone].filter(Boolean);
+    return [...new Set([...first, ...zones])];
+  }, [zones, selected, homeZone]);
+  const chips = showAllZones ? orderedZones : orderedZones.slice(0, 8);
 
   return (
     <div className="card space-y-3">
@@ -81,7 +115,7 @@ export default function LogisticsCard({ estate }) {
       <div className="flex items-center justify-between">
         <div className="font-semibold text-sm font-display flex items-center gap-2">
           <span>Water & Logistics</span>
-          {source === "live" && !isStale && (
+          {source === "live" && !error && (
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -90,129 +124,212 @@ export default function LogisticsCard({ estate }) {
         </div>
         <span
           className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-            isStale
-              ? "text-amber-800 bg-amber-100 border-amber-300"
-              : error
+            error || stale
               ? "text-amber-700 bg-amber-50 border-amber-200"
               : source === "live"
-              ? "text-emerald-700 bg-emerald-50 border-emerald-100"
-              : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
+                ? "text-emerald-700 bg-emerald-50 border-emerald-100"
+                : "text-[var(--sb-text-tertiary)] bg-[var(--sb-surface-alt)] border-[var(--sb-border)]"
           }`}
         >
-          {isStale
-            ? "Saved data (fallback)"
-            : error
-            ? "Unavailable"
-            : source === "live"
-            ? "Live · Maji Website"
-            : "Preview data"}
+          {error
+            ? "Offline Fallback"
+            : stale
+              ? "Saved data"
+              : source === "live"
+                ? "Live · Maji Website"
+                : "Preview data"}
         </span>
       </div>
 
       <p className="text-xs text-[var(--sb-text-tertiary)]">
-        {estate
-          ? `For study groups meeting in person near ${estate}.`
-          : "Upstream water delivery zones verified by Maji Website for in-person group sessions."}
+        Meeting in person? Pick an area Maji delivers to, see its water vendors,
+        then plan your session there.
       </p>
 
-      {/* Week 11 Part D: Visible Stale Data Banner */}
-      {isStale && asOf && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs text-amber-900 flex items-start gap-2 shadow-xs">
-          <span className="text-amber-700 text-sm mt-[-1px]">⚠️</span>
-          <div className="leading-relaxed">
-            <span className="font-semibold">Notice:</span> Showing saved data from{" "}
-            <span className="font-mono font-medium">{new Date(asOf).toLocaleTimeString()}</span>. The partner is not responding.
-          </div>
+      {/* Saved-data banner (the fallback must be visible) */}
+      {stale && !error && (
+        <div
+          role="status"
+          className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900"
+        >
+          Showing saved data from {timeOf(asOf)}. Maji Website is not
+          responding.
         </div>
       )}
 
-      {/* Graceful Failure Notice if nothing is saved */}
-      {error && !isStale && (
+      {/* Graceful failure: no crash, a clear message */}
+      {error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900 space-y-1">
-          <div className="font-medium flex items-center gap-1.5">
-            <span>⚠️ Maji Website Service Unavailable</span>
-          </div>
+          <div className="font-medium">⚠️ Maji Website can't be reached</div>
           <p className="text-[11px] text-amber-800 leading-relaxed">
-            Partner data is unavailable right now ({error}). Physical study sessions will default to campus meeting points until partner connection recovers.
+            We couldn't load the delivery areas ({error}). You can still book an
+            online session, and in-person sessions can be planned once Maji is
+            back.
           </p>
         </div>
       )}
 
-      {/* Loading Skeleton */}
-      {!error && !stations && estates.length === 0 && (
+      {/* Loading skeleton */}
+      {loading && !error && (
         <div className="flex flex-col gap-2" aria-hidden="true">
           {[0, 1].map((i) => (
-            <div key={i} className="h-9 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse" />
+            <div
+              key={i}
+              className="h-9 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse"
+            />
           ))}
         </div>
       )}
 
-      {/* Water vendors in the user's estate (Maji: GET /api/vendors/locations) */}
-      {!error && stations && stations.length > 0 && (
-        <div className="space-y-1.5">
-          <div className="text-[11px] font-medium text-[var(--sb-text-secondary)] uppercase tracking-wide">
-            Water vendors near you
+      {/* Your estate isn't one Maji delivers to */}
+      {!loading && !error && zones.length > 0 && estate && !homeZone && (
+        <p className="text-[11px] text-[var(--sb-text-tertiary)]">
+          Maji doesn't deliver in {String(estate).split(",")[0]} yet. Pick a
+          nearby area below to meet there.
+        </p>
+      )}
+
+      {/* The student's next planned in-person session */}
+      {nextPlace && !error && (
+        <p className="text-[11px] text-emerald-700">
+          📍 Your next in-person session: {nextPlace.location} on{" "}
+          {nextPlace.date} at {nextPlace.time}
+        </p>
+      )}
+
+      {/* Delivery zones: pick one */}
+      {!error && zones.length > 0 && (
+        <div className="space-y-2 pt-1 border-t border-[var(--sb-border-subtle)]">
+          <div className="flex items-center justify-between text-[11px] font-medium text-[var(--sb-text-secondary)]">
+            <span>Delivery areas ({zones.length}): choose where to meet</span>
+            <button
+              type="button"
+              onClick={() => setShowAllZones((v) => !v)}
+              className="text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer text-[10px]"
+            >
+              {showAllZones ? "Show less" : "View all"}
+            </button>
           </div>
-          <div className="flex flex-col gap-2">
-            {stations.map((s) => {
-              const top = topRated.get(s.vendorId);
+          <div
+            className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1"
+            role="group"
+            aria-label="Delivery areas"
+          >
+            {chips.map((z) => {
+              const isSelected = z === selected;
+              const isHome = z === homeZone;
               return (
-                <div
-                  key={s.vendorId}
-                  className="flex items-center justify-between gap-2 border border-[var(--sb-border-subtle)] rounded-xl px-3 py-2 bg-[var(--sb-surface-alt)]"
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => pick(z)}
+                  aria-pressed={isSelected}
+                  title={isHome ? "Your estate" : undefined}
+                  className={`text-[11px] px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
+                    isSelected
+                      ? "bg-emerald-600 text-white border-emerald-600 font-medium"
+                      : isHome
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-medium"
+                        : "bg-[var(--sb-surface-alt)] text-[var(--sb-text-secondary)] border-[var(--sb-border-subtle)] hover:border-emerald-300"
+                  }`}
                 >
-                  <div className="text-xs font-semibold text-[var(--sb-text-primary)] truncate">
-                    {s.businessName}
-                  </div>
-                  {top && (
-                    <span className="shrink-0 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                      ★ {Number(top.rating).toFixed(1)} top rated
-                    </span>
-                  )}
-                </div>
+                  {z}
+                  {isHome && !isSelected ? " ✓" : ""}
+                </button>
               );
             })}
           </div>
         </div>
       )}
-      {!error && stations && stations.length === 0 && estate && (
-        <p className="text-[11px] text-[var(--sb-text-tertiary)]">
-          No Maji water vendors are listed in your estate yet.
-        </p>
-      )}
 
-      {/* Live Verified Estates list from Maji Website */}
-      {!error && estates.length > 0 && (
+      {/* The chosen zone: its vendors and the plan button */}
+      {!error && selected && (
         <div className="space-y-2 pt-1 border-t border-[var(--sb-border-subtle)]">
-          <div className="flex items-center justify-between text-[11px] font-medium text-[var(--sb-text-secondary)]">
-            <span>Verified Active Delivery Zones ({estates.length})</span>
+          <div className="text-[11px] font-medium text-[var(--sb-text-secondary)] uppercase tracking-wide">
+            Water vendors in {selected}
+          </div>
+
+          {vendors === null && (
+            <div className="flex flex-col gap-2" aria-hidden="true">
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className="h-9 rounded-xl bg-[var(--sb-surface-alt)] animate-pulse"
+                />
+              ))}
+            </div>
+          )}
+
+          {vendorsSavedAt && (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-200 bg-amber-50/60 p-2 text-[11px] text-amber-900"
+            >
+              Showing saved data from {timeOf(vendorsSavedAt)}. Maji Website is
+              not responding.
+            </div>
+          )}
+
+          {vendorsError && (
+            <p className="text-[11px] text-amber-800">
+              Couldn't load vendors for {selected} right now ({vendorsError}).
+              You can still plan the session.
+            </p>
+          )}
+
+          {vendors && vendors.length === 0 && !vendorsError && (
+            <p className="text-[11px] text-[var(--sb-text-tertiary)]">
+              No Maji water vendors are listed in {selected} yet.
+            </p>
+          )}
+
+          {top.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {top.map((v) => (
+                <div
+                  key={v.vendorId}
+                  className="flex items-center justify-between gap-2 border border-[var(--sb-border-subtle)] rounded-xl px-3 py-2 bg-[var(--sb-surface-alt)]"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[var(--sb-text-primary)] truncate">
+                      {v.businessName}
+                    </div>
+                    <div className="text-[10px] text-[var(--sb-text-tertiary)]">
+                      {Number(v.rating) > 0
+                        ? `★ ${Number(v.rating).toFixed(1)}`
+                        : "No rating yet"}
+                      {v.isVerified ? " · verified" : ""}
+                      {v.isOnline ? " · online now" : ""}
+                    </div>
+                  </div>
+                  {v.phone && (
+                    <a
+                      href={`tel:${v.phone}`}
+                      className="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2 py-1 hover:bg-emerald-100"
+                    >
+                      Call
+                    </a>
+                  )}
+                </div>
+              ))}
+              {ranked.length > SHOWN_VENDORS && (
+                <p className="text-[10px] text-[var(--sb-text-tertiary)]">
+                  +{ranked.length - SHOWN_VENDORS} more in {selected}. See them
+                  all on Discover under Water Sales.
+                </p>
+              )}
+            </div>
+          )}
+
+          {onPlanHere && (
             <button
               type="button"
-              onClick={() => setShowAllEstates(!showAllEstates)}
-              className="text-emerald-600 hover:text-emerald-700 font-semibold cursor-pointer text-[10px]"
+              onClick={() => onPlanHere(selected)}
+              className="w-full mt-1 py-2 rounded-xl text-[11px] font-semibold bg-[var(--sb-inverse)] text-[var(--sb-inverse-text)] hover:bg-emerald-600 transition-all duration-300"
             >
-              {showAllEstates ? "Show less" : "View all"}
+              Plan a session in {selected} →
             </button>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-            {(showAllEstates ? estates : estates.slice(0, 6)).map((e) => {
-              const isUserEstate = estate && e.name.toLowerCase().includes(estate.toLowerCase());
-              return (
-                <span
-                  key={e.id || e.name}
-                  className={`text-[11px] px-2 py-0.5 rounded-lg border transition-colors ${
-                    isUserEstate
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-medium"
-                      : "bg-[var(--sb-surface-alt)] text-[var(--sb-text-secondary)] border-[var(--sb-border-subtle)]"
-                  }`}
-                  title={isUserEstate ? "Your current home estate" : undefined}
-                >
-                  {e.name} {isUserEstate && "✓"}
-                </span>
-              );
-            })}
-          </div>
+          )}
         </div>
       )}
     </div>
