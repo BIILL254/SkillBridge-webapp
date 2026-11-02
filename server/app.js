@@ -26,17 +26,28 @@ import authRouter from "./routes/auth.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import { createRequireApiKey, createRateLimit } from "./middleware/apiKey.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { monitor, statsHandler } from "./middleware/monitoring.js";
 
 const app = express();
 
 // Don't advertise "X-Powered-By: Express" on every response.
 app.disable("x-powered-by");
 
+// Week 12: log every request (one JSON line) and keep running totals. This is
+// registered FIRST, before CORS, the key check and the rate limiter, so
+// rejected requests (401, 429) and browser preflights are recorded too.
+app.use(monitor);
+
 // Behind a host's reverse proxy (Render), req.ip would be the proxy's address
 // unless Express is told to trust the forwarded one. Set TRUST_PROXY=1 there.
 // Leave it unset locally so a client cannot fake its address.
 if (process.env.TRUST_PROXY) {
-  app.set("trust proxy", /^\d+$/.test(process.env.TRUST_PROXY) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY);
+  app.set(
+    "trust proxy",
+    /^\d+$/.test(process.env.TRUST_PROXY)
+      ? Number(process.env.TRUST_PROXY)
+      : process.env.TRUST_PROXY,
+  );
 }
 
 const intFromEnv = (name, fallback) => {
@@ -78,13 +89,22 @@ app.get(["/swagger", "/test"], (req, res) => {
 app.use(createRequireApiKey());
 // Per-key rate limit (429 + Retry-After). Defaults: 100 requests/minute for
 // each partner/team key, 300/minute per IP address for our own web app.
-app.use(createRateLimit({
-  windowMs: intFromEnv("RATE_LIMIT_WINDOW_MS", 60_000),
-  max: intFromEnv("RATE_LIMIT_MAX", 100),
-  webMax: intFromEnv("RATE_LIMIT_WEB_MAX", 300),
-}));
+app.use(
+  createRateLimit({
+    windowMs: intFromEnv("RATE_LIMIT_WINDOW_MS", 60_000),
+    max: intFromEnv("RATE_LIMIT_MAX", 100),
+    webMax: intFromEnv("RATE_LIMIT_WEB_MAX", 300),
+  }),
+);
 
-app.use(express.json());  // parse JSON request bodies into req.body
+// Week 12: running totals (requests, 4xx and 5xx counts, error rate, average
+// and slowest times, per route). Behind the key check on purpose: it needs an
+// X-API-Key like everything else. Registered with the same /api and root
+// aliases as the other endpoints.
+app.get("/api/stats", statsHandler);
+app.get("/stats", statsHandler);
+
+app.use(express.json()); // parse JSON request bodies into req.body
 
 app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);

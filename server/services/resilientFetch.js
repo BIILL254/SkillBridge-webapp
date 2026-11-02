@@ -13,7 +13,7 @@
 export const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, Math.max(0, ms || 0)));
 
-function failureReason(err) {
+export function failureReason(err) {
   if (err?.name === "TimeoutError" || err?.name === "AbortError") return "timeout";
   return err?.cause?.code || err?.code || err?.name || "network error";
 }

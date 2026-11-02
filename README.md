@@ -178,6 +178,48 @@ Content-Type: application/json
 ```
 `Retry-After` (and `retryAfter`) is the number of seconds to wait before trying again. Every response also carries `X-RateLimit-Limit` and `X-RateLimit-Remaining` so you can slow down before hitting the limit. Our own web app is counted per visitor address instead of per key, at 300 requests per minute. Limits can be changed with `RATE_LIMIT_MAX`, `RATE_LIMIT_WEB_MAX` and `RATE_LIMIT_WINDOW_MS` (see `.env.example`).
 
+### Request monitoring and `/stats`
+
+The API writes one JSON log line to the server output when each request finishes. Each line includes the timestamp, method, path (without query parameters), status, response time in milliseconds, and a short SHA-256 API-key fingerprint (`key-xxxxxx`). Missing or invalid keys are labeled `none`. Request and response bodies, credentials, and query strings are never logged. Local `*.log` files are ignored by Git.
+
+The in-memory `GET /stats` endpoint (also available at `GET /api/stats`) requires the normal `X-API-Key` header and is subject to the rate limit. It reports totals and per-route counts, 4xx/5xx errors, average and maximum response times. Data resets when the server restarts; `/stats` appears in the totals on the next request.
+
+```bash
+curl -H "X-API-Key: <your-api-key>" http://localhost:3001/stats
+```
+
+Example response:
+
+```json
+{
+  "startedAt": "2026-11-02T08:00:00.000Z",
+  "uptimeSeconds": 120,
+  "total": 3,
+  "clientErrors": 1,
+  "serverErrors": 0,
+  "errorRatePercent": 0,
+  "avgMs": 4.2,
+  "routes": {
+    "GET /api/experts": {
+      "count": 2,
+      "clientErrors": 0,
+      "serverErrors": 0,
+      "avgMs": 3.8,
+      "maxMs": 5.1
+    },
+    "GET (no route)": {
+      "count": 1,
+      "clientErrors": 1,
+      "serverErrors": 0,
+      "avgMs": 5,
+      "maxMs": 5
+    }
+  }
+}
+```
+
+Generate local traffic with `KEY=<your-api-key> node traffic.js` (PowerShell: set `$env:KEY` first). Use `API` to override the server URL and `N` to set the request count. See [MONITORING_NOTES.md](MONITORING_NOTES.md) for the prediction and measurement worksheet.
+
 ---
 
 ## Working Examples per Major Endpoint

@@ -20,6 +20,7 @@
 //                 app but is NOT a secret — real user security is the login.
 
 import crypto from "crypto";
+import { fingerprintApiKey } from "./monitoring.js";
 
 // "name:key,name:key" -> [{ name, key }]. Blank entries are ignored.
 export function parseApiKeys(raw) {
@@ -71,6 +72,8 @@ export function createRequireApiKey({
       return res.status(401).json({ error: "Missing or invalid API key" });
     }
     req.apiConsumer = match.name; // the NAME, never the key itself
+    // Retain only a one-way fingerprint for request logging, never the key.
+    req.apiKeyFingerprint = fingerprintApiKey(sent);
     next();
   };
 }
