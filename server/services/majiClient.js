@@ -90,6 +90,7 @@ const savedCopies = new Map(); // key -> { result, asOf }
 export function clearSavedCopies() {
   savedCopies.clear();
 }
+export const clearLastGoodCache = clearSavedCopies;
 
 async function liveOrSaved(key, fetchLive) {
   try {
@@ -108,7 +109,7 @@ async function liveOrSaved(key, fetchLive) {
     console.warn(
       `[majiClient] Maji unreachable, serving the copy of ${key} saved at ${saved.asOf}`,
     );
-    return { ...saved.result, stale: true, asOf: saved.asOf };
+    return { ...saved.result, source: "cached", stale: true, asOf: saved.asOf };
   }
 }
 
