@@ -6,6 +6,7 @@ process.env.NODE_ENV = "test";
 // Never let the test suite call the real Maji Website: an empty base URL
 // puts majiClient.js in its documented mock-data mode.
 process.env.MAJI_API_BASE_URL = "";
+process.env.PARTNER_VERSION = "v1";
 
 // Week 9: the API refuses every request without a valid X-API-Key. These are
 // throwaway keys that exist only inside the test run (they are not secrets).

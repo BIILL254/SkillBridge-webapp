@@ -20,6 +20,8 @@ import requestsRouter from "./routes/requests.routes.js";
 import sessionsRouter from "./routes/sessions.routes.js";
 import profileRouter from "./routes/profile.routes.js";
 import expertsRouter from "./routes/experts.routes.js";
+import expertsV2Router from "./routes/experts.v2.js";
+import { deprecated } from "./middleware/deprecate.js";
 import skillsRouter from "./routes/skills.routes.js";
 import logisticsRouter from "./routes/logistics.routes.js";
 import authRouter from "./routes/auth.routes.js";
@@ -113,17 +115,29 @@ app.use("/api/profile", profileRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
 
+// Week 13: Deprecation middleware for v1 endpoints
+const v1Deprecated = deprecated({
+  sunset: "2026-11-20",
+  successor: "/api/v2/experts",
+});
+
 // Downstream — served TO Farmers-AgroConnect
-app.use("/api/experts", expertsRouter);
+// Week 13: v2 beside v1
+app.use("/api/v2/experts", expertsV2Router);
+app.use("/v2/experts", expertsV2Router);
+
+app.use("/api/v1/experts", v1Deprecated, expertsRouter);
+app.use("/v1/experts", v1Deprecated, expertsRouter);
+
+// Unversioned endpoints continue to serve v1 with deprecation headers
+app.use("/api/experts", v1Deprecated, expertsRouter);
 app.use("/api/skills", skillsRouter);
 
 // Upstream — proxying calls TO Maji Website (see server/services/majiClient.js)
 app.use("/api/logistics", logisticsRouter);
 
-// Root aliases for AgroConnect, so both /api/experts and /experts work as
-// documented in ENDPOINT_LIST.md. They are registered AFTER the key check and
-// rate limit above, so they need an X-API-Key exactly like the /api versions.
-app.use("/experts", expertsRouter);
+// Root aliases for AgroConnect, so /experts works as documented
+app.use("/experts", v1Deprecated, expertsRouter);
 app.use("/skills", skillsRouter);
 app.use("/requests", requestsRouter);
 

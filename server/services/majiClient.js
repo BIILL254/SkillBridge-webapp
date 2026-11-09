@@ -50,6 +50,7 @@
 
 import { fetchWithRetry, failureReason } from "./resilientFetch.js";
 import { countEvent } from "../middleware/monitoring.js";
+import { versions } from "./partner.js";
 
 const getBaseUrl = () =>
   (process.env.MAJI_API_BASE_URL || "").trim().replace(/\/+$/, "");
@@ -370,22 +371,19 @@ export async function getStations(estateName) {
   }
 
   return liveOrSaved(`stations:${estate.toLowerCase()}`, async () => {
+    const ver = versions[process.env.PARTNER_VERSION || "v1"] || versions.v1;
     const raw = await callMaji(
-      `/api/vendors/locations${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`,
+      `${ver.path}${estate ? `?estate=${encodeURIComponent(estate)}` : ""}`,
     );
-    if (!Array.isArray(raw)) {
+    let stations;
+    try {
+      stations = ver.parse(raw);
+    } catch (parseErr) {
       throw Object.assign(
-        new Error(
-          "Maji Website returned an unexpected response for vendor locations",
-        ),
+        new Error(`Maji Website returned an unexpected response for vendor locations: ${parseErr.message}`),
         { status: 502 },
       );
     }
-    const stations = raw.map((v) => ({
-      vendorId: v.vendorId,
-      businessName: v.businessName,
-      estate: v.estate,
-    }));
     return { source: "live", stations };
   });
 }

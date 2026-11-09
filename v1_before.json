@@ -1,0 +1,228 @@
+[
+  {
+    "id": 3,
+    "name": "William Kasongo",
+    "estate": "Karen, Nairobi",
+    "rating": 5,
+    "latitude": -1.3192,
+    "longitude": 36.7076,
+    "bio": "Business mentor offering Digital Marketing, Sales, Taxes.",
+    "skills": [
+      "Digital Marketing",
+      "Sales",
+      "Taxes",
+      "Water Sales"
+    ]
+  },
+  {
+    "id": 12,
+    "name": "Priya Sharma",
+    "estate": "Thika Road, Nairobi",
+    "rating": 5,
+    "latitude": -1.2192,
+    "longitude": 36.8896,
+    "bio": "Academic Subjects mentor offering Academic Tutoring, Data Analysis, Statistics.",
+    "skills": [
+      "Academic Tutoring",
+      "Data Analysis",
+      "Statistics"
+    ]
+  },
+  {
+    "id": 1,
+    "name": "Bill Amani",
+    "estate": "Kileleshwa, Nairobi",
+    "rating": 4.9,
+    "latitude": -1.2762,
+    "longitude": 36.7816,
+    "bio": "Technology mentor offering AI & Automation, Python, Web Development.",
+    "skills": [
+      "AI & Automation",
+      "Python",
+      "Web Development"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "La Pulga",
+    "estate": "Kilimani, Nairobi",
+    "rating": 4.9,
+    "latitude": -1.2921,
+    "longitude": 36.7833,
+    "bio": "Fitness & Sports mentor offering Fitness Training, Football Coaching.",
+    "skills": [
+      "Fitness Training",
+      "Football Coaching"
+    ]
+  },
+  {
+    "id": 10,
+    "name": "Ichigoat",
+    "estate": "Rongai, Kajiado",
+    "rating": 4.9,
+    "latitude": -1.3958,
+    "longitude": 36.7539,
+    "bio": "Fitness & Sports mentor offering Fitness Training, Karate.",
+    "skills": [
+      "Fitness Training",
+      "Karate"
+    ]
+  },
+  {
+    "id": 13,
+    "name": "Amina Farah",
+    "estate": "Ruiru, Kiambu",
+    "rating": 4.9,
+    "latitude": -1.1466,
+    "longitude": 36.9615,
+    "bio": "Agriculture mentor offering Agronomy, Crop Disease Management, Irrigation Systems.",
+    "skills": [
+      "Agronomy",
+      "Crop Disease Management",
+      "Irrigation Systems",
+      "Soil Health",
+      "Water Treatment"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Jessica",
+    "estate": "Lavington, Nairobi",
+    "rating": 4.8,
+    "latitude": -1.279,
+    "longitude": 36.769,
+    "bio": "Design mentor offering Content Creation, Figma, UI/UX Design.",
+    "skills": [
+      "Content Creation",
+      "Figma",
+      "UI/UX Design"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "Bruce Wayne",
+    "estate": "Runda, Nairobi",
+    "rating": 4.8,
+    "latitude": -1.2136,
+    "longitude": 36.8125,
+    "bio": "Business mentor offering Cloud Computing, Cybersecurity, Sales.",
+    "skills": [
+      "Cloud Computing",
+      "Cybersecurity",
+      "Sales",
+      "Water Sales"
+    ]
+  },
+  {
+    "id": 11,
+    "name": "Jordan Lee",
+    "estate": "Ngong, Kajiado",
+    "rating": 4.8,
+    "latitude": -1.3529,
+    "longitude": 36.6564,
+    "bio": "Languages mentor offering French, Spanish, Translation.",
+    "skills": [
+      "French",
+      "Spanish",
+      "Translation"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "K.Dot",
+    "estate": "Westlands, Nairobi",
+    "rating": 4.7,
+    "latitude": -1.2676,
+    "longitude": 36.8108,
+    "bio": "Music & Arts mentor offering Content Creation, Music Production, Songwriting.",
+    "skills": [
+      "Content Creation",
+      "Music Production",
+      "Songwriting"
+    ]
+  },
+  {
+    "id": 9,
+    "name": "Naruto Uzumaki",
+    "estate": "Embakasi, Nairobi",
+    "rating": 4.7,
+    "latitude": -1.3242,
+    "longitude": 36.8938,
+    "bio": "Fitness & Sports mentor offering Fitness Training, Public Speaking.",
+    "skills": [
+      "Fitness Training",
+      "Public Speaking"
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Walter White",
+    "estate": "South B, Nairobi",
+    "rating": 4.6,
+    "latitude": -1.3095,
+    "longitude": 36.828,
+    "bio": "Academic Subjects mentor offering Academic Tutoring, Chemistry, Water Treatment.",
+    "skills": [
+      "Academic Tutoring",
+      "Chemistry",
+      "Water Treatment"
+    ]
+  },
+  {
+    "id": 14,
+    "name": "Samuel Mwangi",
+    "estate": "Limuru, Kiambu",
+    "rating": 4.6,
+    "latitude": -1.1122,
+    "longitude": 36.6417,
+    "bio": "Agriculture mentor offering Farm Tech, Livestock Management, Organic Farming.",
+    "skills": [
+      "Farm Tech",
+      "Livestock Management",
+      "Organic Farming"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "Lelouch",
+    "estate": "Kasarani, Nairobi",
+    "rating": 4.5,
+    "latitude": -1.2233,
+    "longitude": 36.8967,
+    "bio": "Life Skills mentor offering Public Speaking, Strategy & Planning.",
+    "skills": [
+      "Public Speaking",
+      "Strategy & Planning"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "Test User",
+    "estate": "Nairobi",
+    "rating": 0,
+    "latitude": -1.2921,
+    "longitude": 36.8219,
+    "bio": "Undeclared mentor.",
+    "skills": []
+  },
+  {
+    "id": 17,
+    "name": "Jacom",
+    "estate": "Nairobi",
+    "rating": 0,
+    "latitude": -1.2921,
+    "longitude": 36.8219,
+    "bio": "Undeclared mentor.",
+    "skills": []
+  },
+  {
+    "id": 18,
+    "name": "Taylor Swift",
+    "estate": "Nairobi",
+    "rating": 0,
+    "latitude": -1.2921,
+    "longitude": 36.8219,
+    "bio": "Undeclared mentor.",
+    "skills": []
+  }
+]

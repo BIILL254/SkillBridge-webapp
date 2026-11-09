@@ -80,6 +80,7 @@ x-render-origin-server: Render
 | **3** | UI displayed blank estate names (`undefined`) | Contract specified objects with `{ id, name, deliveryStatus }`, but partner API returns `{ "estate": "..." }` without `id` or `name` properties. | Added `normalizeEstates()` helper in `majiClient.js` that maps `item.estate` to `item.name`, generates a stable ID, and sets `deliveryStatus: "active"`. | Partner contract drift, fixed in SkillBridge adapter |
 | **4** | Station endpoint `GET /vendors/stations` returns `404 Not Found` | Maji Website has deployed orders and active estates, but has not yet implemented the vendor pickup stations route on their live server. | In `getStations()`, caught upstream 404 and returned `{ source: "live", stations: [], notice: "..." }` so the schedule page continues functioning gracefully without failing. | Partner incomplete route, handled gracefully by SkillBridge |
 | **5** | Simulated partner server offline (Part D failure test) | Pointed `MAJI_API_BASE_URL` to an invalid address (`http://localhost:59999`). Node threw `ECONNREFUSED`. | Added try/catch with 10s timeout in `callMaji()`, logging cause code (`ECONNREFUSED`), returning HTTP 502 with structured error JSON, and rendered a clean amber warning banner in `LogisticsCard.jsx` without crashing the page. | SkillBridge Part D resilience, implemented by SkillBridge |
+| **6** | Week 13: Deprecation notice received from Maji for `/api/vendors/locations` | Upstream partner upgraded to v2 (`/api/v2/vendors/locations`), wrapping arrays in `{ data, count }` and setting sunset date for 2026-11-20. | Created `server/services/partner.js` version adapter supporting both v1 and v2, selectable via `PARTNER_VERSION=v2` in `.env`. Validated with `partner.test.js`. Zero downtime or broken requests occurred because we were warned in advance. | Upstream partner contract evolution, cleanly handled in SkillBridge |
 
 ---
 
@@ -115,3 +116,14 @@ While integrating upstream with Maji Website, we verified that SkillBridge conti
 - **Step 1 (Live Data):** Open `http://localhost:5173/schedule`. Point out the `"Live · Maji Website"` badge with green pulse indicator and show the 23 verified active Nairobi delivery zones fetched in real time from Maji.
 - **Step 2 (Partner Down):** Stop Maji connection (point `MAJI_API_BASE_URL` to an unreachable port or unmount). Reload Schedule page. Demonstrate that the app remains running, calendar and sessions load normally, and a friendly offline fallback banner is displayed.
 - **Step 3 (Partner Restored):** Restore the live Maji URL. Reload the page. Demonstrate that live data instantly recovers.
+
+---
+
+## 7. Week 13 Upstream Migration (Maji v2)
+
+In Week 13, Maji Website sent a formal deprecation notice announcing the retirement of their unversioned vendor stations API in favor of `/api/v2/vendors/locations`.
+
+- **Migration Implementation:** We encapsulated all upstream schema differences in `server/services/partner.js`.
+- **Zero-Downtime Switch:** Changing `PARTNER_VERSION=v2` in `.env` immediately redirects client calls to the v2 endpoint, normalizes `{ data: [...], count }` into our standard internal model, and leaves all UI components untouched.
+- **Automated Validation:** Verified with `npm test` via `__tests__/partner.test.js`, ensuring both v1 and v2 responses parse to identical UI-ready structures.
+
