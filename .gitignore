@@ -4,7 +4,11 @@ postman/
 dist
 .DS_Store
 .env
+.env.*
+!.env.example
 *.log
+requests.log
+server.log
 
 # runtime SQLite data — regenerated automatically by server/db.js on first
 # run (or via `npm run db:reset`); shouldn't be committed since it's
