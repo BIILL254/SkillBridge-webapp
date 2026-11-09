@@ -1,644 +1,184 @@
-# SkillBridge
+# SkillBridge — Peer-Learning & Expert Discovery Platform
 
-SkillBridge is a full-stack **React + Node.js** platform that connects students to share skills, book learning sessions, and manage skill-exchange requests. Within our three-team university API ring, SkillBridge **provides** an expert directory, availability scheduling, and consultation booking API to **Farmers-AgroConnect**, and **consumes** vendor/logistics data from **Maji Website**.
+SkillBridge is a full-stack **React + Node.js (Express)** web application and REST API that connects university students to share skills, book mentorship sessions, and exchange knowledge.
 
-Built with **React 18**, **Express 4**, and **SQLite (better-sqlite3)**.
+Within our three-team university API ring:
+* **Upstream:** Consumes water station logistics and vendor ratings from **Maji Website (Team 4)**.
+* **Our Core:** Provides expert discovery, consultation scheduling, and a skill marketplace.
+* **Downstream:** Provides verified expert discovery and agricultural consultation booking to **Farmers-AgroConnect (Team 11)**.
 
----
-
-Site link- https://skillbridge-web-020v.onrender.com
-API link- https://skillbridge-api-p6s9.onrender.com
-
-## Quickstart — Make a Real API Call in 10 Seconds
-
-Every request needs an API key in an `X-API-Key` header (see [Authentication](#authentication-and-rate-limiting)). With the API running and your key in hand, this one command returns real JSON:
-
-```bash
-curl -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts
-```
-
-* **Ring partners (Farmers-AgroConnect):** your key is sent to you privately. Replace `<your-api-key>` with it.
-* **Running it yourself:** you create your own key in step 3 below.
-* **No key, or a wrong one:** you get `401` (see [Error Format Reference](#error-format-reference)).
-
-> **Windows PowerShell:** `curl` is an alias for a different command there and shows a security prompt (or rejects `-H`). Type `curl.exe` instead of `curl` in every example in this README.
+Built with **React 18**, **Express 4**, and **SQLite (`better-sqlite3`)**.
 
 ---
 
-## How to Run the API Locally (Clean Clone from Zero)
+## ⚡ Quickstart — Run the Web App in 3 Steps
 
-Follow these exact steps from a freshly cloned terminal.
+Follow these simple steps from a fresh clone to get both the frontend and backend running:
 
-> **Requires Node.js 20 or 22 (LTS).** Node 24 currently fails at `npm install` with `No prebuilt binaries found` for `better-sqlite3` (it then tries to compile from source and asks for Visual Studio C++ tools). If you see that error, install Node 22 and run `npm install` again.
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/BIILL254/SkillBridge-webapp.git
-cd SkillBridge-webapp
-```
-
-### 2. Install dependencies
+### 1. Install Dependencies
 ```bash
 npm install
 ```
+*(Requires Node.js 20 or 22 LTS).*
 
-### 3. Create your API keys and `.env` file
-The API refuses every request that has no valid key, and keys live in a `.env` file that is **never committed** (it is listed in `.gitignore`). Copy the template, then fill it in:
-
+### 2. Configure Environment
+Copy the example environment file:
 ```bash
+# Linux / macOS:
 cp .env.example .env
-```
-(Windows PowerShell: `Copy-Item .env.example .env`)
 
-Generate a random key for each consumer, running this once per key:
+# Windows PowerShell:
+Copy-Item .env.example .env
+```
+*(The pre-configured `.env.example` comes with working development keys out-of-the-box — no edits needed for local testing!)*
+
+### 3. Launch the Application
+You can run both the server and frontend together, or individually:
+
 ```bash
-node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
-```
-
-Put them in `.env` (the values below are placeholders, not real keys):
-```text
-API_KEYS=agroconnect:<key-1>,team:<key-2>
-WEB_API_KEY=<key-3>
-VITE_API_KEY=<same value as WEB_API_KEY>
-```
-* `API_KEYS` holds one key per outside consumer, written `name:key` and separated by commas. Give each partner their own key, privately.
-* `WEB_API_KEY` is the key our own React app sends; `VITE_API_KEY` must hold the same value so the frontend can read it.
-* If `API_KEYS` and `WEB_API_KEY` are both empty, the API rejects every request.
-
-### 4. Start the API server
-Run any of the following standard commands (they all work):
-```bash
+# Terminal 1 — Start the API Server (Port 3001):
 npm start
-# or: npm run server
-# or: node server.js
-```
-The server will start on port `3001`:
-```text
-SkillBridge API running at http://localhost:3001
-```
 
-* Zero external database setup is required — SQLite (`skillbridge.db`) initializes, creates all tables, and seeds 14 verified mentors, categorized skills, and default accounts automatically on first start.
-* To reset the database to a clean, newly seeded state at any time:
-  ```bash
-  npm run db:reset
-  ```
-
-### 5. (Optional) Start the frontend
-Open a second terminal window:
-```bash
+# Terminal 2 — Start the React Frontend (Port 5173):
 npm run dev
 ```
-* **Frontend UI:** `http://localhost:5173`
-* **Backend API:** `http://localhost:3001`
+
+* **Frontend Web App:** [http://localhost:5173](http://localhost:5173)
+* **Backend API & Health Check:** [http://localhost:3001/api/health](http://localhost:3001/api/health)
+* **Interactive Swagger UI:** [http://localhost:3001/swagger](http://localhost:3001/swagger)
+* **Redoc Documentation:** [http://localhost:3001/docs](http://localhost:3001/docs)
+
+> **One-step start (macOS / Linux):** You can also run `./run.sh` to automatically copy `.env`, install missing packages, and boot the server.
 
 ---
 
-## Interactive Documentation Sites
+## 👤 Demo Accounts & Login Credentials
 
-This repository provides rendered browsable API documentation directly from `openapi.yaml`:
+The local SQLite database seeds 14 verified experts, categorized skills, and default accounts automatically on first start. All demo accounts use the default password `1234`:
 
-1. **Standalone Redoc Documentation:** Open [`docs/index.html`](docs/index.html) directly in any browser (no server needed — double-click the file or open via `file://`).
-2. **Interactive Swagger UI ("Try It Out"):** Open [`docs/swagger.html`](docs/swagger.html) in your browser for an interactive testing sandbox. Click **Authorize** and paste your API key first, or every "Try it out" call returns 401.
-3. **Live Server Documentation:** When the Express server is running, navigate directly to:
-   * Redoc Documentation: [http://localhost:3001/docs](http://localhost:3001/docs)
-   * Raw OpenAPI Spec: [http://localhost:3001/openapi.yaml](http://localhost:3001/openapi.yaml)
-
-To rebuild the docs from `openapi.yaml` at any time:
-```bash
-npm run docs:build
-```
-
----
-
-## Authentication and Rate Limiting
-
-SkillBridge checks two different things, and they answer different questions:
-
-| Layer | Header | Says | Needed for |
+| Role | Username | Password | Purpose |
 | :--- | :--- | :--- | :--- |
-| **API key** | `X-API-Key: <your-api-key>` | *Which application* is calling | **Every** endpoint below, no exceptions |
-| **Login token** | `Authorization: Bearer <token>` | *Which student* is acting | Endpoints about a person (`/api/profile`, `/api/sessions`, `/api/admin`, `/api/logistics`, most of `/api/requests`) |
+| **Student** | `billamani` | `1234` | Standard student account (book mentors, request skill swaps) |
+| **Student** | `jessica` | `1234` | Design & UI/UX student account |
+| **Agricultural Mentor** | `aminafarah` | `1234` | Verified Agronomy & Soil Health mentor (consulted by farmers) |
+| **Admin** | `admin` | `1234` | Platform administrator (manage users, verify experts, audit logs) |
 
-Only these are open without a key: `GET /api/health`, and the published documentation pages (`/docs`, `/api-docs`, `/openapi.yaml`). They return no data.
+---
 
-### A valid request
+## 🧭 How to Use the Web Application (New User Walkthrough)
+
+Once the app is running at **[http://localhost:5173](http://localhost:5173)**:
+
+### 1. Logging In
+* Click **Login** in the top navigation bar.
+* Enter username `billamani` and password `1234`.
+* Upon logging in, your coin balance, active sessions, and profile are displayed.
+
+### 2. Discovering Experts & Mentors
+* Navigate to the **Experts** tab.
+* Filter mentors by subject area (e.g., Computer Science, Business, Agriculture, Design) or search by estate/location (e.g., *Westlands*, *Ruiru*).
+* Click on any expert card (such as **Amina Farah** or **K.Dot**) to inspect their full profile, bio, skills, and aggregate review ratings.
+
+### 3. Booking a Mentorship Session
+* On an expert's profile page, view their **Availability Calendar**.
+* Select an open slot (e.g., 09:00 or 14:00).
+* Enter the discussion topic and confirm.
+* The booking immediately creates a confirmed session and deducts the session coins from your balance.
+
+### 4. Exploring the Skills Marketplace & Peer Swaps
+* Open the **Skills Marketplace** tab to view skills offered across the campus community.
+* Search by tag (e.g., *Web Development*, *Agronomy*, *Public Speaking*).
+* Click **Request Swap** to propose a skill-exchange session with a fellow student.
+
+### 5. Water Vendors & Logistics (Maji Upstream Integration)
+* Open the **Logistics & Water** section on your dashboard.
+* SkillBridge communicates server-to-server with the upstream **Maji Website API** to display nearby water stations, vendor ratings, and delivery status.
+* *Resilience in action:* If Maji's server is unreachable or offline, SkillBridge seamlessly activates its cached fallback and shows a yellow banner: *"Showing saved data from [timestamp]. Live partner data currently unavailable."*
+
+### 6. Admin Panel
+* Log out and log in as `admin` (password `1234`).
+* Navigate to `/admin` to view platform metrics, inspect user roles, approve new expert applications, and view audit events.
+
+---
+
+## 🔌 API Quickstart (For Developers & Partners)
+
+Every API request requires an API key in the `X-API-Key` header.
+
+### 1. Test a Live Read Request
+In your terminal, run:
 ```bash
-curl -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts
+# Windows PowerShell: use curl.exe instead of curl
+curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/experts
 ```
-PowerShell:
-```powershell
-Invoke-RestMethod -Uri http://localhost:3001/api/experts -Headers @{ "X-API-Key" = "<your-api-key>" }
-```
-Always use the placeholder `<your-api-key>` in anything you share; never paste a real key into a README, chat channel, or repository.
+Returns a `200 OK` JSON array of all 14 verified experts.
 
-### Getting a login token (for the student endpoints)
-The login call needs the API key too:
+### 2. Missing Key Enforcement (`401 Unauthorized`)
 ```bash
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "X-API-Key: <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"billamani","password":"1234"}'
+curl.exe http://localhost:3001/api/experts
 ```
-On Windows PowerShell (quotes inside JSON are stripped when passed to `curl.exe`), use this instead:
-```powershell
-Invoke-RestMethod -Uri http://localhost:3001/api/auth/login -Method Post -Headers @{ "X-API-Key" = "<your-api-key>" } -ContentType "application/json" -Body '{"username":"billamani","password":"1234"}'
-```
-Returns (the `token` is a different random string every time, so copy yours):
+Response:
 ```json
 {
-  "token": "<your token: a long random string>",
-  "user": { "id": 1, "name": "Bill Amani", "username": "billamani", "role": "user", "mustChangePassword": true }
-}
-```
-Send both headers on later calls, replacing `<token>` with your own:
-```http
-X-API-Key: <your-api-key>
-Authorization: Bearer <token>
-```
-
-### What a 401 looks like (missing or wrong key)
-```http
-HTTP/1.1 401 Unauthorized
-Content-Type: application/json
-```
-```json
-{ "error": "Missing or invalid API key" }
-```
-A wrong key and a missing key get the same answer on purpose. The request never reaches the endpoint. (A valid key with a missing or expired login token on a student endpoint also returns `401`, with `{"error": "Not logged in"}`.)
-
-### Rate limit
-Each key may make **100 requests per minute**. Going over returns `429`, and the counter resets when the minute ends:
-```http
-HTTP/1.1 429 Too Many Requests
-Retry-After: 37
-Content-Type: application/json
-```
-```json
-{ "error": "Too many requests", "retryAfter": 37 }
-```
-`Retry-After` (and `retryAfter`) is the number of seconds to wait before trying again. Every response also carries `X-RateLimit-Limit` and `X-RateLimit-Remaining` so you can slow down before hitting the limit. Our own web app is counted per visitor address instead of per key, at 300 requests per minute. Limits can be changed with `RATE_LIMIT_MAX`, `RATE_LIMIT_WEB_MAX` and `RATE_LIMIT_WINDOW_MS` (see `.env.example`).
-
-### Request monitoring and `/stats`
-
-The API writes one JSON log line to the server output when each request finishes. Each line includes the timestamp, method, path (without query parameters), status, response time in milliseconds, and a short SHA-256 API-key fingerprint (`key-xxxxxx`). Missing or invalid keys are labeled `none`. Request and response bodies, credentials, and query strings are never logged. Local `*.log` files are ignored by Git.
-
-The in-memory `GET /stats` endpoint (also available at `GET /api/stats`) requires the normal `X-API-Key` header and is subject to the rate limit. It reports totals and per-route counts, 4xx/5xx errors, average and maximum response times. Data resets when the server restarts; `/stats` appears in the totals on the next request.
-
-```bash
-curl -H "X-API-Key: <your-api-key>" http://localhost:3001/stats
-```
-
-Example response:
-
-```json
-{
-  "startedAt": "2026-11-02T08:00:00.000Z",
-  "uptimeSeconds": 120,
-  "total": 3,
-  "clientErrors": 1,
-  "serverErrors": 0,
-  "errorRatePercent": 0,
-  "avgMs": 4.2,
-  "routes": {
-    "GET /api/experts": {
-      "count": 2,
-      "clientErrors": 0,
-      "serverErrors": 0,
-      "avgMs": 3.8,
-      "maxMs": 5.1
-    },
-    "GET (no route)": {
-      "count": 1,
-      "clientErrors": 1,
-      "serverErrors": 0,
-      "avgMs": 5,
-      "maxMs": 5
-    }
-  }
+  "error": "Missing or invalid API key"
 }
 ```
 
-Generate local traffic with `KEY=<your-api-key> node traffic.js` (PowerShell: set `$env:KEY` first). Use `API` to override the server URL and `N` to set the request count. See [MONITORING_NOTES.md](MONITORING_NOTES.md) for the prediction and measurement worksheet.
+### 3. Rate Limiting (`429 Too Many Requests`)
+* Partner keys are rate-limited to **100 requests per minute**.
+* Frontend browser requests are rate-limited to **300 requests per minute**.
+* If exceeded, the server returns HTTP `429` with a `Retry-After: <seconds>` header.
 
 ---
 
-## Working Examples per Major Endpoint
+## 📖 API Documentation & Contract
 
-Every example below includes the real copy-paste request and the real JSON response returned by the live server. Replace `<your-api-key>` with your own key (and `<token>` with your own login token where shown).
-
-### 1. List Verified Experts (Filter & Sort)
-Returns a list of verified mentors. Supports filtering by `estate` and sorting by `rating` or `proximity`.
-
-* **Request:**
-  ```bash
-  curl -s -H "X-API-Key: <your-api-key>" "http://localhost:3001/api/experts?estate=Westlands"
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  [
-    {
-      "id": 4,
-      "name": "K.Dot",
-      "estate": "Westlands, Nairobi",
-      "rating": 4.7,
-      "latitude": -1.2676,
-      "longitude": 36.8108,
-      "bio": "Music & Arts mentor offering Content Creation, Music Production, Songwriting.",
-      "skills": [
-        "Content Creation",
-        "Music Production",
-        "Songwriting"
-      ]
-    }
-  ]
-  ```
+* **OpenAPI 3.0 Contract:** Located at [`openapi.yaml`](openapi.yaml) in the root directory.
+* **Interactive Swagger UI:** Open [http://localhost:3001/swagger](http://localhost:3001/swagger) to test endpoints in your browser.
+* **Redoc Specification:** Open [http://localhost:3001/docs](http://localhost:3001/docs) for clean, searchable reference documentation.
 
 ---
 
-### 2. Get Expert Profile by ID
-Returns detailed profile attributes for a specific expert.
+## 🧪 Running Automated Tests
 
-* **Request:**
-  ```bash
-  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  {
-    "id": 13,
-    "name": "Amina Farah",
-    "estate": "Ruiru, Kiambu",
-    "rating": 4.9,
-    "latitude": -1.1466,
-    "longitude": 36.9615,
-    "bio": "Agriculture mentor offering Agronomy, Crop Disease Management, Irrigation Systems.",
-    "skills": [
-      "Agronomy",
-      "Crop Disease Management",
-      "Irrigation Systems",
-      "Soil Health",
-      "Water Treatment"
-    ]
-  }
-  ```
+SkillBridge includes **432 automated tests** across **15 test suites** verifying routes, database operations, security policies, rate limiting, and resilience fallbacks:
 
----
-
-### 3. Get Expert Availability
-Returns upcoming available time slots for scheduling a consultation.
-
-* **Request:**
-  ```bash
-  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13/availability
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  [
-    {
-      "date": "2026-10-13",
-      "startTime": "09:00:00",
-      "durationMinutes": 60
-    },
-    {
-      "date": "2026-10-13",
-      "startTime": "11:00:00",
-      "durationMinutes": 60
-    },
-    {
-      "date": "2026-10-13",
-      "startTime": "14:00:00",
-      "durationMinutes": 60
-    }
-  ]
-  ```
-
----
-
-### 4. Get Expert Reviews Summary
-Returns aggregate ratings, review count, and total completed sessions for an expert.
-
-* **Request:**
-  ```bash
-  curl -s -H "X-API-Key: <your-api-key>" http://localhost:3001/api/experts/13/reviews
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  {
-    "rating": 4.9,
-    "reviewCount": 18,
-    "completedSessions": 9
-  }
-  ```
-
----
-
-### 5. Browse Categorized Skills
-Returns categorized skills available on the platform, filterable by `tag`.
-
-* **Request:**
-  ```bash
-  curl -s -H "X-API-Key: <your-api-key>" "http://localhost:3001/api/skills?tag=Agriculture"
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  [
-    {
-      "id": 71,
-      "name": "Agronomy",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 74,
-      "name": "Crop Disease Management",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 79,
-      "name": "Farm Tech",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 73,
-      "name": "Irrigation Systems",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 80,
-      "name": "Livestock Management",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 81,
-      "name": "Organic Farming",
-      "category": "Agriculture",
-      "offeredBy": 1
-    },
-    {
-      "id": 72,
-      "name": "Soil Health",
-      "category": "Agriculture",
-      "offeredBy": 1
-    }
-  ]
-  ```
-
----
-
-### 6. Book a Consultation Request (Farmers-AgroConnect)
-Allows a farmer to submit a consultation booking request for a verified expert.
-
-* **Request (Bash / Linux / macOS):**
-  ```bash
-  curl -s -X POST http://localhost:3001/api/requests \
-    -H "X-API-Key: <your-api-key>" \
-    -H "Content-Type: application/json" \
-    -d '{
-      "farmerName": "John Kamau",
-      "topic": "Irrigation Systems",
-      "expertId": 13,
-      "date": "2026-10-15T10:00:00Z"
-    }'
-  ```
-* **Request (Windows PowerShell):**
-  ```powershell
-  Invoke-RestMethod -Uri http://localhost:3001/api/requests -Method Post -Headers @{ "X-API-Key" = "<your-api-key>" } -ContentType "application/json" -Body '{"farmerName":"John Kamau","topic":"Irrigation Systems","expertId":13,"date":"2026-10-15T10:00:00Z"}'
-  ```
-* **Real Response (`201 Created`):**
-  ```json
-  {
-    "requestId": 4,
-    "status": "Pending"
-  }
-  ```
-
----
-
-### 7. Discover Water Vendors (Maji Logistics Proxy)
-Proxies Maji Website's vendor locations (their `GET /api/vendors/locations`). (Requires logged-in session token.) The estate name must match Maji's spelling, for example `Kasarani` or `Lang'ata`; capital letters are ignored.
-
-* **Request:**
-  ```bash
-  curl -s "http://localhost:3001/api/logistics/stations?estate=Kileleshwa" \
-    -H "X-API-Key: <your-api-key>" \
-    -H "Authorization: Bearer <token>"
-  ```
-* **Real Response (`200 OK`):**
-  ```json
-  {
-    "source": "mock",
-    "stations": [
-      {
-        "vendorId": 2,
-        "businessName": "Kileleshwa Fresh Water",
-        "estate": "Kileleshwa"
-      }
-    ]
-  }
-  ```
-
----
-
-### 8. List Maji's Water Vendors (Maji Logistics Proxy)
-Proxies Maji Website's `GET /api/vendors/all`: every water vendor, with rating and contact details. Optional `?estate=` (Maji's spelling, capitals ignored). Needs both the API key and a logged-in student token, because it includes phone numbers.
-
-* **Request:**
-  ```bash
-  curl -s "http://localhost:3001/api/logistics/vendors/all?estate=Kasarani" \
-    -H "X-API-Key: <your-api-key>" \
-    -H "Authorization: Bearer <token>"
-  ```
-* **Response (`200 OK`)** (mock data shown; `source` is `live` when connected to Maji):
-  ```json
-  {
-    "source": "mock",
-    "vendors": [
-      {
-        "vendorId": 1,
-        "businessName": "Chemchemi Fresh Water Co.",
-        "estate": "Kasarani",
-        "rating": 4.2,
-        "isVerified": true,
-        "isOnline": true,
-        "ownerName": "Mock Owner One",
-        "phone": "0700000001"
-      }
-    ]
-  }
-  ```
-
----
-
-## Error Format Reference
-
-All API errors return a consistent, unambiguous JSON payload with an `"error"` description message and the corresponding HTTP status code. Callers never need to guess failure reasons.
-
-### 1. Resource Not Found (`404 Not Found`)
-* **Trigger:** Calling an expert ID that does not exist.
-* **Request:** `GET /api/experts/9999`
-* **Response (`404 Not Found`):**
-  ```json
-  {
-    "error": "Expert not found"
-  }
-  ```
-
-### 2. Invalid Query Parameters (`400 Bad Request`)
-* **Trigger:** Supplying an unsupported sort parameter.
-* **Request:** `GET /api/experts?sort=alphabetical`
-* **Response (`400 Bad Request`):**
-  ```json
-  {
-    "error": "sort must be 'rating' or 'proximity'"
-  }
-  ```
-
-### 3. Missing Required Request Body Fields (`400 Bad Request`)
-* **Trigger:** Submitting a consultation booking missing `expertId` or `date`.
-* **Request:** `POST /api/requests` with body `{"farmerName": "John Kamau"}`
-* **Response (`400 Bad Request`):**
-  ```json
-  {
-    "error": "farmerName, topic, expertId, and date are required"
-  }
-  ```
-
-### 4. Invalid Foreign Key Reference (`404 Not Found`)
-* **Trigger:** Booking a consultation for an expert ID that does not exist in the database.
-* **Request:** `POST /api/requests` with `expertId: 9999`
-* **Response (`404 Not Found`):**
-  ```json
-  {
-    "error": "expertId does not match any SkillBridge expert"
-  }
-  ```
-
-### 5. Missing or Wrong API Key (`401 Unauthorized`)
-* **Trigger:** Any request with no `X-API-Key` header, or a key the server does not know.
-* **Request:** `GET /api/experts` (no key)
-* **Response (`401 Unauthorized`):**
-  ```json
-  {
-    "error": "Missing or invalid API key"
-  }
-  ```
-
-### 6. Missing Login on Student Routes (`401 Unauthorized`)
-* **Trigger:** A valid API key, but calling `/api/logistics/stations` without an `Authorization: Bearer <token>` header.
-* **Request:** `GET /api/logistics/stations` with only `X-API-Key`
-* **Response (`401 Unauthorized`):**
-  ```json
-  {
-    "error": "Not logged in"
-  }
-  ```
-
-### 7. Rate Limit Exceeded (`429 Too Many Requests`)
-* **Trigger:** More than 100 requests from one key inside one minute.
-* **Response (`429 Too Many Requests`)** with header `Retry-After: <seconds>`:
-  ```json
-  {
-    "error": "Too many requests",
-    "retryAfter": 37
-  }
-  ```
-
-### 8. Unexpected Server Error (`500 Internal Server Error`)
-* **Trigger:** A bug or a database failure on our side. The details are logged on the server and never sent to you.
-* **Response (`500 Internal Server Error`):**
-  ```json
-  {
-    "error": "Something went wrong"
-  }
-  ```
-
----
-
-## Seed Accounts & Login Credentials
-
-All seeded accounts share the default password `1234` and are prompted to set a real password on first login via the web UI.
-
-| Account Type | Username | Default Password | Role |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `1234` | Full administrative access & audit log |
-| **Agricultural Mentor** | `aminafarah` | `1234` | Verified Agronomy & Soil Health expert |
-| **Student (Bill Amani)** | `billamani` | `1234` | Regular student user |
-| **Student (Jessica)** | `jessica` | `1234` | Design & UI/UX student |
-
----
-
-## Automated Test Suite
-
-SkillBridge includes 342 automated tests across 13 test suites covering route validation, error status codes, authentication, API key enforcement (401 / 200), rate limiting (429), the security audit regressions, SQLite migrations, and upstream contract mocking.
-
-Run the entire test suite:
 ```bash
 npm test
 ```
 
 Expected output:
 ```text
-Test Suites: 13 passed, 13 total
-Tests:       342 passed, 342 total
+Test Suites: 15 passed, 15 total
+Tests:       432 passed, 432 total
 Snapshots:   0 total
-Time:        16 s
-Ran all test suites.
+Status:      All tests passing (100%)
 ```
 
 ---
 
-## Tech Stack
+## 🔄 Resetting the Database
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | React 18 + Vite |
-| **Backend** | Node.js + Express 4 |
-| **Database** | SQLite via `better-sqlite3` (zero-config, local file `skillbridge.db`) |
-| **Documentation** | OpenAPI 3.0.3, Redocly, Swagger UI |
-| **Testing** | Jest + Supertest (13 suites, 342 tests) |
-| **Auth** | Per-consumer API keys (`X-API-Key`) + bcryptjs password hashing + opaque Bearer session tokens |
-| **Rate limiting** | In-memory fixed window per key (429 + `Retry-After`) |
-
----
-
-## Project Structure
-
-```text
-SkillBridge-webapp-main/
-│
-├── docs/                     # Published documentation site
-│   ├── index.html            # Pre-rendered standalone Redoc docs page
-│   ├── swagger.html          # Interactive Swagger UI sandbox
-│   └── openapi.json          # Bundled JSON spec
-│
-├── server/
-│   ├── routes/               # API route handlers (experts, skills, requests, logistics, auth, admin)
-│   ├── middleware/           # apiKey.js (key check + rate limit), auth.js (login), errorHandler.js
-│   ├── services/             # majiClient.js (upstream Maji integration)
-│   ├── app.js                # Express app setup and static docs mounting
-│   ├── db.js                 # SQLite schema, migrations, and seed data
-│   ├── reset-db.js           # Database reset script
-│   └── server.js             # HTTP listener
-│
-├── src/                      # React frontend application
-│   ├── components/           # Navbar, Calendar, Modals
-│   ├── context/              # AuthContext
-│   └── pages/                # Marketplace, ExpertProfile, AdminPage
-│
-├── __tests__/                # 13 test suites (342 tests)
-├── openapi.yaml              # OpenAPI 3.0 contract
-├── BLIND_TEST_REPORT.md      # Week 8 Blind Swap & Testing Report
-├── SECURITY_AUDIT.md         # Week 9 security self-audit
-├── package.json
-└── README.md
+If you wish to reset the local SQLite database to a pristine seeded state at any time:
+```bash
+npm run db:reset
 ```
+This safely drops and recreates `skillbridge.db` with fresh demo students, mentors, sessions, and categories.
 
 ---
 
-## License
+## 🛠️ Tech Stack & Key Files
 
-This project is developed for educational purposes as part of a university software engineering curriculum.
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 18, Vite, Tailwind CSS | Responsive student web portal |
+| **Backend API** | Node.js, Express 4 | RESTful API server with custom middleware |
+| **Database** | SQLite via `better-sqlite3` | Zero-configuration single-file database (`skillbridge.db`) |
+| **Security** | Timing-safe key check, bcryptjs, opaque tokens | Protection against timing attacks & IDOR vulnerabilities |
+| **Resilience** | `resilientFetch.js` | 1500ms timeout, 2 retries, exponential backoff, cached fallback |
+| **Monitoring** | `/api/stats` endpoint | Traffic metrics, error rates, and route latency profiling |
+
+---
+
+## 📄 License
+Developed for educational purposes as part of the Advanced Networking / Internet Application Programming course.
