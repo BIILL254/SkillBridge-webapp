@@ -30,14 +30,39 @@ Internally, I would improve my time management when preparing lab drafts. Some o
 
 ## 4. My Contribution to the Project
 
-My initial assigned role, according to the team charter, was API Lead, but my actual contributions extended into backend development and deployment-related work. My commits:
-
-- **August:** the initial backend and SQLite database (`7e23b87`, 20 August).
-- **September:** server-side validation and error handling (`15a4788`); the downstream AgroConnect API and upstream Maji integration (`b84e3a8`); authentication and the admin panel (`ff92b69`); a DELETE handling fix and contract deviations documentation (`517e46f`).
-- **October:** documentation and deployment configuration, including the endpoint list (`3fe6012`, 16 October) and Render configuration (`4e9aa94`, 19 October); API key authentication, rate limiting and a security audit (`71d4189`, 27 October); and the Maji vendor endpoints and request-exchange button. Working on the vendor cards also helped me learn more about CSS.
+My initial assigned role, according to the team charter, was API Lead, but my actual contributions extended into backend development and deployment-related work. I helped build the initial backend and SQLite database in August. In September I contributed validation, error handling, authentication and the AgroConnect and Maji integrations. In October I worked on documentation, Render configuration, API key authentication, rate limiting, a security audit and the Maji vendor endpoints. Working on the vendor cards also helped me learn more about CSS. The commits are listed in the appendix.
 
 I also took on documentation and deployment-related work beyond my initial API Lead responsibilities, including tasks that were closer to the documentation and DevOps work assigned to Stephanie in the original charter. These contributions helped support the wider application.
 
 During the later part of the project, my contribution was mainly drafting lab work. Bill reviewed my drafts first, after which Bill, Stephanie and Vincent edited them or used them as submitted. I acknowledge that I let my teammates take the forefront during this period, and my drafts could sometimes have been more complete or submitted earlier. My Git history also shows a gap between 23 September and 15 October; the CAT pause explains part, but not all, of that period.
 
 I would rate my contribution **8/10** because I made substantial technical contributions across the project, particularly in backend development, security and Maji integration, while recognising areas where my consistency and involvement could have been better.
+
+---
+
+## Appendix: Commit Evidence
+
+My commits appear under the author names Rick (two email addresses) and muthokaricky-alt; all are my accounts.
+
+### My commits
+
+| Commit | Date | Message |
+|--------|------|---------|
+| `7e23b87` | 20 Aug | SQLite database and updated README |
+| `15a4788` | 5 Sep | Add server-side validation, error handling, stop tracking db files |
+| `b84e3a8` | 7 Sep | Add downstream API for AgroConnect and upstream Maji Website integration, with agriculture skills |
+| `ff92b69` | 13 Sep | Add authentication system, admin panel, and backend updates |
+| `517e46f` | 22 Sep | Week 6: fix DELETE /requests/:id 404 handling, add CONTRACT_DEVIATIONS.md |
+| `3fe6012` | 16 Oct | Update ENDPOINT_LIST.md |
+| `4e9aa94` | 19 Oct | Week 8: docs matched to server, README fixes, honest reports; add Render config |
+| `71d4189` | 27 Oct | Week 9: API key auth, rate limiting, security audit |
+| `68e3f9e` | 29 Oct | Restore root routes behind API key; add Maji vendor endpoints |
+| `7a2a3a2` | 30 Oct | Add request exchange button to Maji vendor cards |
+
+### Related integration work by Bill
+
+| Commit | Date | Message |
+|--------|------|---------|
+| `fee6531` | 29 Oct | Initial blind test and integration with maji-website |
+| `c975ce1` | 1 Nov | Timeout implementation, retry logic, graceful fallback and write-up |
+| `a89c812` | 2 Nov | Improvement on Maji API integration |
