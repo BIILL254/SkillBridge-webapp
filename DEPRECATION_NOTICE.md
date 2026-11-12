@@ -73,7 +73,13 @@ Wrapping the bare array in a `{ data, count }` response envelope allows SkillBri
 ---
 
 ## Timeline
-* **Today (2026-11-09):** v2 is live now. v1 continues to serve requests and now carries standard RFC `Deprecation` and `Sunset` headers.
-* **Fri, 20 Nov 2026 00:00:00 GMT:** Sunset date. v1 will be turned off and return `410 Gone`.
+* **Today (2026-11-09):** v2 is live now. v1 continues to serve requests. Every v1 response carries `Deprecation: true`, `Sunset: Fri, 20 Nov 2026 00:00:00 GMT` and a `Link` header with the matching v2 URL (for example `/api/v1/experts/13` points to `/api/v2/experts/13`).
+* **Fri, 20 Nov 2026 00:00:00 GMT:** Sunset date. v1 will be turned off and return `410 Gone`, with the successor in the body:
+
+```json
+{ "error": "This API version has been retired", "sunset": "Fri, 20 Nov 2026 00:00:00 GMT", "successor": "/api/v2/experts/13" }
+```
+
+If you cannot move by then, tell us before the date and we can move it.
 
 ---
