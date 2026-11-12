@@ -11,10 +11,10 @@
 ## 1. Context & Setup (Part A)
 
 - **Upstream Partner:** Team 4 (Maji Website — Water Ordering & Vendor Distribution Platform)
-- **Downstream Partner:** Team 11 (Farmers-AgroConnect — Agricultural Consultation Platform)
+- **Downstream Partner:** Team 6 (Farmers-AgroConnect — Agricultural Consultation Platform)
 - **Channel:** Live sync in lab session & shared API endpoints
 - **Upstream Base URL:** `https://maji-api-onrender-com.onrender.com`
-- **Authentication:** No API key required for Maji's active endpoints; optional `MAJI_API_KEY` supported in `.env` if required later.
+- **Authentication:** No API key was needed on Maji's early endpoints. From 29 Oct Maji requires one, set as `MAJI_API_KEY` in `.env` (see row 7 in section 3).
 
 ---
 
@@ -81,6 +81,7 @@ x-render-origin-server: Render
 | **4** | Station endpoint `GET /vendors/stations` returns `404 Not Found` | Maji Website has deployed orders and active estates, but has not yet implemented the vendor pickup stations route on their live server. | In `getStations()`, caught upstream 404 and returned `{ source: "live", stations: [], notice: "..." }` so the schedule page continues functioning gracefully without failing. | Partner incomplete route, handled gracefully by SkillBridge |
 | **5** | Simulated partner server offline (Part D failure test) | Pointed `MAJI_API_BASE_URL` to an invalid address (`http://localhost:59999`). Node threw `ECONNREFUSED`. | Added try/catch with 10s timeout in `callMaji()`, logging cause code (`ECONNREFUSED`), returning HTTP 502 with structured error JSON, and rendered a clean amber warning banner in `LogisticsCard.jsx` without crashing the page. | SkillBridge Part D resilience, implemented by SkillBridge |
 | **6** | Week 13: Deprecation notice received from Maji for `/api/vendors/locations` | Upstream partner upgraded to v2 (`/api/v2/vendors/locations`), wrapping arrays in `{ data, count }` and setting sunset date for 2026-11-20. | Created `server/services/partner.js` version adapter supporting both v1 and v2, selectable via `PARTNER_VERSION=v2` in `.env`. Validated with `partner.test.js`. Zero downtime or broken requests occurred because we were warned in advance. | Upstream partner contract evolution, cleanly handled in SkillBridge |
+| **7** | 29 Oct: `GET /api/vendors/all` returned `404 Cannot GET /api/vendors/all` (about 01:30), then `401` once Maji switched API-key checking on (about 22:31) | 404: Maji had written the route but not pushed it to GitHub, so it was never deployed (they confirmed at 10:25). 401: their key check was live but the keys were not yet set in Maji's Render environment | Rick asked for the endpoint on 28 Oct (11:51; Maji offered the all-vendors list at 12:32), tested it and sent Maji a three-point bug report. Maji pushed the route and added the keys (about 23:37); it worked at 23:41 and returned 50+ vendors. About 36 hours from request to first success, about 1 h 10 min of it the 401. | Maji's code and deployment. Rick requested, tested and diagnosed it. Bill built the integration (`fee6531`, `c975ce1`, `a89c812`). |
 
 ---
 
