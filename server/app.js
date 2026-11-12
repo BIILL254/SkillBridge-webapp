@@ -29,6 +29,7 @@ import adminRouter from "./routes/admin.routes.js";
 import { createRequireApiKey, createRateLimit } from "./middleware/apiKey.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { monitor, statsHandler } from "./middleware/monitoring.js";
+import { securityHeaders } from "./middleware/securityHeaders.js";
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.disable("x-powered-by");
 // registered FIRST, before CORS, the key check and the rate limiter, so
 // rejected requests (401, 429) and browser preflights are recorded too.
 app.use(monitor);
+
+// Week 14: standard security headers on every response (see the file for the list).
+app.use(securityHeaders);
 
 // Behind a host's reverse proxy (Render), req.ip would be the proxy's address
 // unless Express is told to trust the forwarded one. Set TRUST_PROXY=1 there.
