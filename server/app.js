@@ -120,9 +120,11 @@ app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
 
 // Week 13: Deprecation middleware for v1 endpoints
+// The sunset date can be moved with V1_SUNSET_DATE (no code change) if a partner needs longer.
+// The successor follows the request: /api/v1/experts/13 -> /api/v2/experts/13.
 const v1Deprecated = deprecated({
-  sunset: "2026-11-20",
-  successor: "/api/v2/experts",
+  sunset: process.env.V1_SUNSET_DATE || "2026-11-20",
+  successor: (req) => `/api/v2/experts${req.path === "/" ? "" : req.path}`,
 });
 
 // Downstream — served TO Farmers-AgroConnect
