@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: SkillBridge API
-  version: 1.0.0
+  version: 2.0.0
   description: 'API contract for SkillBridge. It provides expert discovery, consultation booking, a skills catalogue
     and a logistics proxy to Maji Website.
 
@@ -16,7 +16,15 @@ info:
     over returns `429` with a `Retry-After` header (seconds) and a JSON body.
 
 
-    **Errors.** Every error response has the shape `{ "error": "<message>" }` (the `429` also has `retryAfter`).'
+    **Errors.** Every error response has the shape `{ "error": "<message>" }` (the `429` also has `retryAfter`).
+
+
+    **Versions.** `v2` is current. `v1` is deprecated and retires on the date in its `Sunset` header (20 Nov 2026
+    unless moved). v2 wraps lists in `{ "data": [...], "count": N }`, wraps a single item in `{ "data": {...} }`,
+    and renames `estate` to `location`; IDs, ratings, coordinates, skills and the API key are unchanged. The
+    unversioned `/experts` paths are aliases of v1 and carry the same headers. Every v1 response has `Deprecation:
+    true`, `Sunset: <date>` and `Link: <the v2 URL for the same path>; rel="successor-version"`. Once v1 is switched
+    off it answers `410 Gone` with the successor in the body.'
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -129,8 +137,10 @@ paths:
     get:
       tags:
       - Experts
-      summary: Return verified expert profiles
+      summary: Return verified expert profiles (v1, deprecated)
       operationId: getExperts
+      deprecated: true
+      description: Alias of the v1 endpoint. Use the v2 equivalent; see the Versions section above.
       parameters:
       - name: estate
         in: query
@@ -160,6 +170,13 @@ paths:
       responses:
         '200':
           description: Experts retrieved successfully
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
           content:
             application/json:
               schema:
@@ -168,6 +185,8 @@ paths:
                   $ref: '#/components/schemas/Expert'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '410':
+          $ref: '#/components/responses/Gone'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -176,19 +195,30 @@ paths:
     get:
       tags:
       - Experts
-      summary: Return detailed expert profile
+      summary: Return detailed expert profile (v1, deprecated)
       operationId: getExpertById
+      deprecated: true
+      description: Alias of the v1 endpoint. Use the v2 equivalent; see the Versions section above.
       parameters:
       - $ref: '#/components/parameters/ExpertId'
       responses:
         '200':
           description: Expert found
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Expert'
         '404':
           $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -224,13 +254,22 @@ paths:
     get:
       tags:
       - Experts
-      summary: Return expert availability
+      summary: Return expert availability (v1, deprecated)
       operationId: getExpertAvailability
+      deprecated: true
+      description: Alias of the v1 endpoint. Use the v2 equivalent; see the Versions section above.
       parameters:
       - $ref: '#/components/parameters/ExpertId'
       responses:
         '200':
           description: Available time slots
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
           content:
             application/json:
               schema:
@@ -239,6 +278,8 @@ paths:
                   $ref: '#/components/schemas/Availability'
         '404':
           $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -280,19 +321,30 @@ paths:
     get:
       tags:
       - Experts
-      summary: Return expert review summary
+      summary: Return expert review summary (v1, deprecated)
       operationId: getExpertReviews
+      deprecated: true
+      description: Alias of the v1 endpoint. Use the v2 equivalent; see the Versions section above.
       parameters:
       - $ref: '#/components/parameters/ExpertId'
       responses:
         '200':
           description: Reviews retrieved
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReviewSummary'
         '404':
           $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '429':
@@ -489,6 +541,301 @@ paths:
                 $ref: '#/components/schemas/Error'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v1/experts:
+    get:
+      tags:
+      - Experts
+      summary: Return verified expert profiles (v1, deprecated)
+      operationId: getExpertsV1
+      deprecated: true
+      description: The explicit v1 endpoint (frozen). Use the v2 equivalent; see the Versions section above.
+      parameters:
+      - name: estate
+        in: query
+        schema:
+          type: string
+        example: Westlands
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - rating
+          - proximity
+        example: rating
+      - name: lat
+        in: query
+        schema:
+          type: number
+          format: double
+        example: -1.286
+      - name: lng
+        in: query
+        schema:
+          type: number
+          format: double
+        example: 36.817
+      responses:
+        '200':
+          description: Experts retrieved successfully
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/experts/{id}:
+    get:
+      tags:
+      - Experts
+      summary: Return detailed expert profile (v1, deprecated)
+      operationId: getExpertByIdV1
+      deprecated: true
+      description: The explicit v1 endpoint (frozen). Use the v2 equivalent; see the Versions section above.
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Expert found
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/experts/{id}/availability:
+    get:
+      tags:
+      - Experts
+      summary: Return expert availability (v1, deprecated)
+      operationId: getExpertAvailabilityV1
+      deprecated: true
+      description: The explicit v1 endpoint (frozen). Use the v2 equivalent; see the Versions section above.
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Available time slots
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Availability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/experts/{id}/reviews:
+    get:
+      tags:
+      - Experts
+      summary: Return expert review summary (v1, deprecated)
+      operationId: getExpertReviewsV1
+      deprecated: true
+      description: The explicit v1 endpoint (frozen). Use the v2 equivalent; see the Versions section above.
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Reviews retrieved
+          headers:
+            Deprecation:
+              $ref: '#/components/headers/Deprecation'
+            Sunset:
+              $ref: '#/components/headers/Sunset'
+            Link:
+              $ref: '#/components/headers/SuccessorLink'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewSummary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          $ref: '#/components/responses/Gone'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/experts:
+    get:
+      tags:
+      - Experts
+      summary: Return verified expert profiles (v2)
+      operationId: getExpertsV2
+      description: The current version. The list is wrapped in `{ data, count }` and `estate` is called `location`.
+      parameters:
+      - name: location
+        in: query
+        description: Filter by location. `estate` is accepted as an alternative name; if both are sent, `location` wins.
+        schema:
+          type: string
+          maxLength: 100
+        example: Ruiru
+      - name: estate
+        in: query
+        description: Same as `location`.
+        schema:
+          type: string
+          maxLength: 100
+        example: Ruiru
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - rating
+          - proximity
+        example: rating
+      - name: lat
+        in: query
+        description: Required with `lng` when `sort=proximity`.
+        schema:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        example: -1.286
+      - name: lng
+        in: query
+        schema:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        example: 36.817
+      responses:
+        '200':
+          description: Experts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpertV2List'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/experts/{id}:
+    get:
+      tags:
+      - Experts
+      summary: Return detailed expert profile (v2)
+      operationId: getExpertByIdV2
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Expert found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpertV2Single'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/experts/{id}/availability:
+    get:
+      tags:
+      - Experts
+      summary: Return expert availability (v2)
+      operationId: getExpertAvailabilityV2
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Available time slots
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                - count
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Availability'
+                  count:
+                    type: integer
+                    example: 3
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v2/experts/{id}/reviews:
+    get:
+      tags:
+      - Experts
+      summary: Return expert review summary (v2)
+      operationId: getExpertReviewsV2
+      parameters:
+      - $ref: '#/components/parameters/ExpertId'
+      responses:
+        '200':
+          description: Reviews retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewSummary'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 components:
   securitySchemes:
     apiKeyAuth:
@@ -548,6 +895,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RateLimitError'
+    Gone:
+      description: This API version has been retired (only after the Sunset date, and only once the team switches enforcement on). The body names the successor.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - error
+            properties:
+              error:
+                type: string
+                example: This API version has been retired
+              sunset:
+                type: string
+                example: Fri, 20 Nov 2026 00:00:00 GMT
+              successor:
+                type: string
+                example: /api/v2/experts/13
   schemas:
     Error:
       type: object
@@ -589,6 +954,73 @@ components:
         bio:
           type: string
           example: Certified Agronomy mentor.
+        skills:
+          type: array
+          items:
+            type: string
+          example:
+          - Agronomy
+          - Soil Health
+    ExpertV2:
+      type: object
+      required:
+      - id
+      - name
+      - location
+      - rating
+      - latitude
+      - longitude
+      properties:
+        id:
+          type: integer
+          example: 13
+        name:
+          type: string
+          example: Amina Farah
+        location:
+          type: string
+          description: Called `estate` in v1.
+          example: Ruiru, Kiambu
+        rating:
+          type: number
+          format: float
+          example: 4.9
+        latitude:
+          type: number
+          example: -1.1466
+        longitude:
+          type: number
+          example: 36.9615
+        bio:
+          type: string
+          example: Agriculture mentor offering Agronomy, Crop Disease Management, Irrigation Systems.
+        skills:
+          type: array
+          items:
+            type: string
+          example:
+          - Agronomy
+          - Soil Health
+    ExpertV2List:
+      type: object
+      required:
+      - data
+      - count
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpertV2'
+        count:
+          type: integer
+          example: 14
+    ExpertV2Single:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          $ref: '#/components/schemas/ExpertV2'
     Skill:
       type: object
       required:
@@ -916,3 +1348,18 @@ components:
       schema:
         type: integer
         example: 37
+    Deprecation:
+      description: Present on every v1 response. `true` means this version is deprecated.
+      schema:
+        type: string
+        example: 'true'
+    Sunset:
+      description: When v1 retires (HTTP date).
+      schema:
+        type: string
+        example: Fri, 20 Nov 2026 00:00:00 GMT
+    SuccessorLink:
+      description: The v2 URL for the same path, as `<url>; rel="successor-version"`.
+      schema:
+        type: string
+        example: </api/v2/experts/13>; rel="successor-version"
