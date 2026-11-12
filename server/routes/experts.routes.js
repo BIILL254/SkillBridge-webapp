@@ -18,26 +18,14 @@ import {
   addConsultationRequest,
 } from "../db.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { parseExpertQuery } from "../utils/expertQuery.js";
 
 const router = Router();
 
 // GET /api/experts?estate={estate}&sort={rating|proximity}&lat=&lng=
 router.get("/", asyncHandler(async (req, res) => {
-  const { estate, sort, lat, lng } = req.query;
-
-  // validate first: contract says sort is an enum and lat/lng are numbers
-  if (sort !== undefined && !["rating", "proximity"].includes(sort)) {
-    return res.status(400).json({ error: "sort must be 'rating' or 'proximity'" });
-  }
-  for (const [name, value, limit] of [["lat", lat, 90], ["lng", lng, 180]]) {
-    if (value !== undefined && !(value.trim() !== "" && Number.isFinite(Number(value)) && Math.abs(Number(value)) <= limit)) {
-      return res.status(400).json({ error: `${name} must be a number between -${limit} and ${limit}` });
-    }
-  }
-  if (sort === "proximity" && (lat === undefined || lng === undefined)) {
-    return res.status(400).json({ error: "lat and lng are required when sort=proximity" });
-  }
-
+  // validated by the shared util (also used by v2): a bad value is a 400
+  const { estate, sort, lat, lng } = parseExpertQuery(req.query);
   res.json(await getExperts({ estate, sort, lat, lng }));
 }));
 
