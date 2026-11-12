@@ -6,7 +6,7 @@ Within our three-team university API ring:
 
 - **Upstream:** Consumes water station logistics and vendor ratings from **Maji Website (Team 4)**.
 - **Our Core:** Provides expert discovery, consultation scheduling, and a skill marketplace.
-- **Downstream:** Provides verified expert discovery and agricultural consultation booking to **Farmers-AgroConnect (Team 11)**.
+- **Downstream:** Provides verified expert discovery and agricultural consultation booking to **Farmers-AgroConnect (Team 6)**.
 
 Built with **React 18**, **Express 4**, and **SQLite (`better-sqlite3`)**.
 
@@ -124,10 +124,10 @@ In your terminal, run:
 
 ```bash
 # Windows PowerShell: use curl.exe instead of curl
-curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/experts
+curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/v2/experts
 ```
 
-Returns a `200 OK` JSON array of all 14 verified experts.
+Returns `200 OK` with `{ "data": [ ... ], "count": N }`: all verified experts (see [API Versions](#-api-versions) below for v1).
 
 ### 2. Missing Key Enforcement (`401 Unauthorized`)
 
@@ -148,6 +148,23 @@ Response:
 - Partner keys are rate-limited to **100 requests per minute**.
 - Frontend browser requests are rate-limited to **300 requests per minute**.
 - If exceeded, the server returns HTTP `429` with a `Retry-After: <seconds>` header.
+
+---
+
+## 🔖 API Versions
+
+| Version | Status | Expert list | Location field |
+|---------|--------|-------------|----------------|
+| **v2** | Current: use this | `/api/v2/experts` returns `{ "data": [...], "count": N }` | `location` |
+| **v1** | Deprecated, sunset **20 Nov 2026** | `/api/v1/experts` returns a bare array | `estate` |
+
+The unversioned `/api/experts` and `/experts` still answer as v1 (with the same deprecation headers).
+
+- **What did not change:** IDs, names, ratings, coordinates, bio, skills, your `X-API-Key`, and the filters (`?location=` and `?estate=` both work on v2).
+- **How to tell you are on v1:** every v1 response carries `Deprecation: true`, `Sunset: <date>` and `Link: <the v2 URL for that same path>; rel="successor-version"`. v2 responses carry none of them.
+- **Sunset behaviour:** until the team switches it on, v1 keeps answering after the date. With `V1_ENFORCE_SUNSET=true` it answers `410 Gone` and names its successor. Move the date without a code change with `V1_SUNSET_DATE`.
+- **Upstream (Maji):** `PARTNER_VERSION=v1|v2` in `.env` chooses which Maji vendor API we call.
+- **Details:** [`DEPRECATION_NOTICE.md`](DEPRECATION_NOTICE.md) (what we told Team 6) and [`VERSIONING_NOTES.md`](VERSIONING_NOTES.md).
 
 ---
 
