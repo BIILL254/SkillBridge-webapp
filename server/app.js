@@ -145,8 +145,9 @@ app.use("/experts", v1Deprecated, expertsRouter);
 app.use("/skills", skillsRouter);
 app.use("/requests", requestsRouter);
 
-// catch-all for unmatched API routes
-app.use("/api", (req, res) => {
+// catch-all for unmatched routes (Week 14: any path, not only /api, so a typo
+// like /expert gets the same JSON error and never Express's default HTML page)
+app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
