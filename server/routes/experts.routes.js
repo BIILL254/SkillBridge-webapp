@@ -59,6 +59,9 @@ export default router;
 // ISO-8601 date-time, e.g. 2026-09-20T10:00:00Z (the contract's `format: date-time`)
 const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
+const MAX_FARMER_NAME = 120;
+const MAX_TOPIC = 200;
+
 export const consultationHandler = async (req, res) => {
   const { farmerName, topic, expertId, date } = req.body;
 
@@ -68,6 +71,12 @@ export const consultationHandler = async (req, res) => {
   }
   if (typeof farmerName !== "string" || !farmerName.trim() || typeof topic !== "string" || !topic.trim()) {
     return res.status(400).json({ error: "farmerName and topic must be non-empty strings" });
+  }
+  // keep stored text a sensible size (an API key holder could otherwise save 90 KB per request)
+  if (farmerName.trim().length > MAX_FARMER_NAME || topic.trim().length > MAX_TOPIC) {
+    return res.status(400).json({
+      error: `farmerName must be at most ${MAX_FARMER_NAME} characters and topic at most ${MAX_TOPIC}`,
+    });
   }
   if (!Number.isInteger(expertId)) {
     return res.status(400).json({ error: "expertId must be an integer" });
