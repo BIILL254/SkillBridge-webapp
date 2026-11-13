@@ -305,6 +305,13 @@ export function toMajiEstate(name) {
     .trim();
 }
 
+// v1 answers with a bare array, v2 with { data: [...], count }. Accept both.
+function unwrapList(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (raw && Array.isArray(raw.data)) return raw.data;
+  return raw;
+}
+
 function normalizeEstates(rawList) {
   if (!Array.isArray(rawList)) return [];
   return rawList.map((item, idx) => {
@@ -332,20 +339,30 @@ export async function getEstates(deliveryStatus) {
   }
 
   return liveOrSaved(`estates:${deliveryStatus || ""}`, async () => {
+    // Maji's deprecation notice (12 Nov 2026): v1 of the estates list stops on
+    // 13 Nov and v2 wraps the list as { data, count }. So we try, in order:
+    //   1. v2   /api/v2/orders/active/estates   (the current one)
+    //   2. v1   /api/orders/active/estates      (until it is switched off)
+    //   3. the Week 4 contract   /estates?deliveryStatus=...
+    // A 404 or 410 means "that version is not there", so we step down; any other
+    // failure (5xx, timeout) is a real outage and goes to the saved-copy fallback.
+    const notThere = (err) => err.upstreamStatus === 404 || err.upstreamStatus === 410;
     let rawData;
     try {
-      rawData = await callMaji("/api/orders/active/estates");
+      rawData = await callMaji("/api/v2/orders/active/estates");
     } catch (err) {
-      if (err.upstreamStatus === 404) {
+      if (!notThere(err)) throw err;
+      try {
+        rawData = await callMaji("/api/orders/active/estates");
+      } catch (err2) {
+        if (!notThere(err2)) throw err2;
         rawData = await callMaji(
           `/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`,
         );
-      } else {
-        throw err;
       }
     }
 
-    const normalized = normalizeEstates(rawData);
+    const normalized = normalizeEstates(unwrapList(rawData));
     const filtered = deliveryStatus
       ? normalized.filter((e) => e.deliveryStatus === deliveryStatus)
       : normalized;
