@@ -1,18 +1,41 @@
+
 # Team SkillBridge - Contributors
 
-This document lists the core contributors and team members for the **SkillBridge** project.
+## Team Members and Roles
 
-## Team Members & Roles
+| Name | Admission Number | Role |
+|---|---|---|
+| Rick Kyalo | As recorded by team | API Lead |
+| Bill Amani | As recorded by team | Backend Dev |
+| Vincent Chege | As recorded by team | Integration / QA Lead |
+| Stephanie Jessica Kananga | 211295 | Docs / DevOps Lead |
 
-| Name | Role | Responsibilities |
-| :--- | :--- | :--- |
-| **Rick Kyalo** | API Lead | Endpoint & API contract decisions, request/response schema design |
-| **Bill Amani** | Backend Dev | Express API endpoints, database SQL schema, business logic |
-| **Teammate 2** | Integration / QA Lead | API contract testing, ring partner endpoint validation, quality assurance |
-| **Teammate 3** | Docs / DevOps Lead | README maintenance, environment configuration, team deployment |
+## Individual Contribution Record
 
----
+### Stephanie Jessica Kananga
+
+**Admission Number:** 211295
+
+**Assigned Role:** Docs / DevOps Lead
+
+**Key Contributions and Commit Logs**
+
+| Commit ID | Contribution |
+|---|---|
+| `a03ba94` | Update App.jsx |
+| `4547c7f` | Update App.jsx |
+| `4e2570d` | Update ReviewModal.jsx |
+| `dc3bf66` | Update ReviewModal.jsx |
+| `c5e6f81` | Document integration issues involving the vendors/all endpoint |
+| `37982c7` | Update README with API versioning and v2 quickstart |
+| `364264f` | Update OpenAPI documentation for API versions |
+| `ba7bd85` | Rebuild published API documentation |
+| `a433425` | Update API versioning and sunset documentation |
+| `7124d81` | Configure Render API version sunset |
+| `f028080` | Document security audit and key-sharing procedures |
+| `fc03dde` | Update integration log |
+| `6222088` | Add individual project retrospective |
 
 ## Project Repository
 
-- **Repository**: [BIILL254/SkillBridge-webapp](https://github.com/BIILL254/SkillBridge-webapp)
+[BIILL254/SkillBridge-webapp](https://github.com/BIILL254/SkillBridge-webapp)
