@@ -1,3 +1,8 @@
+Name:Stephanie Jessica Kananga
+Adm:211295
+ICS C Team 5
+
+
 # Individual Project Retrospective – SkillBridge
 
 ## 1. Which lifecycle stage was the hardest for me?
