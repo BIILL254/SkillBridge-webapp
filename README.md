@@ -12,7 +12,7 @@ Built with **React 18**, **Express 4**, and **SQLite (`better-sqlite3`)**.
 
 ---
 
-## ⚡ Quickstart — Run the Web App in 3 Steps
+##  Quickstart — Run the Web App in 3 Steps
 
 Follow these simple steps from a fresh clone to get both the frontend and backend running:
 
@@ -59,7 +59,7 @@ npm run dev
 
 ---
 
-## 👤 Demo Accounts & Login Credentials
+##  Demo Accounts & Login Credentials
 
 The local SQLite database seeds 14 verified experts, categorized skills, and default accounts automatically on first start. All demo accounts use the default password `1234`:
 
@@ -72,7 +72,7 @@ The local SQLite database seeds 14 verified experts, categorized skills, and def
 
 ---
 
-## 🧭 How to Use the Web Application (New User Walkthrough)
+##  How to Use the Web Application (New User Walkthrough)
 
 Once the app is running at **[http://localhost:5173](http://localhost:5173)**:
 
@@ -151,7 +151,7 @@ Response:
 
 ---
 
-## 🔖 API Versions
+##  API Versions
 
 | Version | Status | Expert list | Location field |
 |---------|--------|-------------|----------------|
@@ -176,7 +176,7 @@ The unversioned `/api/experts` and `/experts` still answer as v1 (with the same 
 
 ---
 
-## 🧪 Running Automated Tests
+##  Running Automated Tests
 
 SkillBridge includes **432 automated tests** across **15 test suites** verifying routes, database operations, security policies, rate limiting, and resilience fallbacks:
 
@@ -195,7 +195,7 @@ Status:      All tests passing (100%)
 
 ---
 
-## 🔄 Resetting the Database
+##  Resetting the Database
 
 If you wish to reset the local SQLite database to a pristine seeded state at any time:
 
@@ -220,6 +220,6 @@ This safely drops and recreates `skillbridge.db` with fresh demo students, mento
 
 ---
 
-## 📄 License
+##  License
 
-Developed for educational purposes as part of the Advanced Networking / Internet Application Programming course.
+Developed for educational purposes as part of the  Internet Application Programming course.
