@@ -40,3 +40,22 @@ Overall, I would focus on planning, regular communication, testing and keeping d
 ## 4. How did my contribution compare with my assigned role?
 
 My assigned role was Docs and DevOps Lead. However, my actual contribution went beyond writing documentation. I worked on API documentation, versioning, deployment configuration, security records and some testing-related changes
+
+PS C:\Users\kanan\OneDrive\Desktop\skill\SkillBridge-webapp> git log origin/main --author="stephanie.jessica@strathmore.edu" --pretty=format:"- %h — %s"
+- c1c1092 — Update individual retrospective
+- 94ffb37 — Document individual contributions and commit history
+- 6222088 — Add individual retrospective
+- fc03dde — Integration log: Maji's 12 Nov notice that v1 estates stops on 13 Nov
+- f028080 — Security audit: record how the AgroConnect and team keys were shared
+- 7124d81 — render.yaml: enforce the v1 sunset (410 from 20 Nov 2026)
+- a433425 — Notice and versioning notes: path-aware Link header, 410 body and the 20 Nov sunset
+- ba7bd85 — Rebuild published docs (Redoc, JSON, Swagger) from openapi.yaml 2.0.0
+- 364264f — OpenAPI 2.0.0: document v1 (deprecated) and v2 experts, headers and 410
+- 37982c7 — README: Team 6, v2 quickstart and an API Versions section
+- c5e6f81 — Integration log: Team 6, and the 28-29 Oct vendors/all 404 and 401
+- aeb019b — Merge pull request #7 from Stephaniekans/main
+- a03ba94 — Update App.jsx
+- 53a96a2 — Merge branch 'rickkyalo-glitch:main' into main
+- 4547c7f — Update App.jsx
+- 4e2570d — Update ReviewModal.jsx
+:
