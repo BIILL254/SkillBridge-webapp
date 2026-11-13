@@ -114,7 +114,7 @@ Once the app is running at **[http://localhost:5173](http://localhost:5173)**:
 
 ---
 
-## 🔌 API Quickstart (For Developers & Partners)
+##  API Quickstart (For Developers & Partners)
 
 Every API request requires an API key in the `X-API-Key` header.
 
@@ -127,7 +127,7 @@ In your terminal, run:
 curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/v2/experts
 ```
 
-Returns `200 OK` with `{ "data": [ ... ], "count": N }`: all verified experts (see [API Versions](#-api-versions) below for v1).
+Returns `200 OK` with `{ "data": [ ... ], "count": N }`: all verified experts (see [API Versions](#api-versions) below for v1).
 
 ### 2. Missing Key Enforcement (`401 Unauthorized`)
 
@@ -151,7 +151,7 @@ Response:
 
 ---
 
-##  API Versions
+## API Versions
 
 | Version | Status | Expert list | Location field |
 |---------|--------|-------------|----------------|
@@ -168,7 +168,7 @@ The unversioned `/api/experts` and `/experts` still answer as v1 (with the same 
 
 ---
 
-## 📖 API Documentation & Contract
+##  API Documentation & Contract
 
 - **OpenAPI 3.0 Contract:** Located at [`openapi.yaml`](openapi.yaml) in the root directory.
 - **Interactive Swagger UI:** Open [http://localhost:3001/swagger](http://localhost:3001/swagger) to test endpoints in your browser.
@@ -207,7 +207,7 @@ This safely drops and recreates `skillbridge.db` with fresh demo students, mento
 
 ---
 
-## 🛠️ Tech Stack & Key Files
+##  Tech Stack & Key Files
 
 | Layer           | Technology                                     | Purpose                                                         |
 | :-------------- | :--------------------------------------------- | :-------------------------------------------------------------- |
