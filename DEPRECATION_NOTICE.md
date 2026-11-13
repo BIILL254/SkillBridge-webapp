@@ -83,3 +83,6 @@ Wrapping the bare array in a `{ data, count }` response envelope allows SkillBri
 If you cannot move by then, tell us before the date and we can move it.
 
 ---
+
+## Questions
+Message Rick Kyalo (API Lead, SkillBridge) any time, in the class group chat or directly. We will reply within 24 hours. If something in v2 behaves differently from this notice, send the request you made, the response you got and the time, and we will check our log.

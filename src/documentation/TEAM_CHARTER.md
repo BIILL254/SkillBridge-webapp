@@ -60,3 +60,8 @@
 ---
 
 ## 5. Repository Deliverables Checklist
+
+- [x] Team formed, roles assigned (see section 1) and ring position confirmed (section 4)
+- [x] GitHub repository `SkillBridge-webapp` created with the existing app code imported
+- [x] Teammates added as collaborators; `CONTRIBUTORS.md` lists everyone
+- [x] `TEAM_CHARTER.md` written with team, app summary, Part B audit (also in `PART_B_AUDIT.md`) and ring position

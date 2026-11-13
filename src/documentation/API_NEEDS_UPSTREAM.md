@@ -3,7 +3,7 @@
 > **Course**: API Planning & Development — Week 2 Lab  
 > **Partner Role**: Upstream API Provider  
 > **Provider App**: Maji Website ([GitHub Repository](https://github.com/NgwonoJeremy/maji-website))  
-> **Consumer App**: SkillBridge ([GitHub Repository](c:\Users\bill7\OneDrive%20-%20Strathmore%20University\Documents\SkillBridge-1))  
+> **Consumer App**: SkillBridge  
 
 ---
 

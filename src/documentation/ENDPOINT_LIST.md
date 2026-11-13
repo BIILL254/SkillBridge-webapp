@@ -3,7 +3,7 @@
 > **Course**: API Planning & Development — Week 3 Lab: Resources, Verbs, and REST Principles  
 > **App Name**: SkillBridge  
 > **Repository Root Deliverable**: `ENDPOINT_LIST.md`  
-> **Source Needs Document**: [`API_NEEDS.md`](file:///c:/Users/bill7/OneDrive%20-%20Strathmore%20University/Documents/SkillBridge-1/API_NEEDS.md)  
+> **Source Needs Document**: [`API_NEEDS.md`](API_NEEDS.md)  
 > **Downstream Consumer**: Farmers-AgroConnect  
 > **Upstream Provider**: Maji Website  
 > **Needs Statement Count**: 10 Total (5 Downstream + 5 Upstream)  

@@ -3,7 +3,7 @@
 > **Course**: API Planning & Development — Week 2 Lab  
 > **Partner Role**: Downstream API Consumer  
 > **Consumer App**: Farmers-AgroConnect ([GitHub Repository](https://github.com/Jmukami/farmers-agroconnect.git))  
-> **Provider App**: SkillBridge ([GitHub Repository](c:\Users\bill7\OneDrive%20-%20Strathmore%20University\Documents\SkillBridge-1))  
+> **Provider App**: SkillBridge  
 
 ---
 

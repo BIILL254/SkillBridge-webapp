@@ -1,5 +1,17 @@
 # Contract Deviations
 
+## Changes to `openapi.yaml` since the Week 4 contract (recorded here in one place)
+
+The Week 4 contract has changed since it was first sent to Farmers-AgroConnect. Each change and why:
+
+| When | Change | Why |
+| :--- | :--- | :--- |
+| Week 8 | The logistics paths (`/stations`, `/estates`, `/payment-methods`, `/deliveries`) were replaced by what the server really serves: `/api/logistics/...` with bearer auth, plus the auth, health and driver-interest endpoints. `GET /logistics/deliveries/{id}` and `POST /logistics/deliveries` are documented as `501`. | The blind test showed the contract listed old paths that the server did not have; Maji has no delivery API. Fixing the contract to match the real server was the honest option. See `BLIND_TEST_REPORT.md`. |
+| Week 9 | Added the `apiKeyAuth` scheme and `401` and `429` responses on every operation. | Every endpoint except `GET /api/health` now needs an `X-API-Key`. |
+| Week 13 | Added `/v1/...` and `/v2/...` expert paths; v2 wraps lists in `{ data, count }` and renames `estate` to `location`. | Breaking change shipped beside v1 (see `DEPRECATION_NOTICE.md`). |
+
+For Week 5, the GET endpoints were checked against the contract by the automated tests in `__tests__/`; the changes in the table above are the places where the contract, not the code, was changed.
+
 ## Week 7 check-in
 
 Reviewed against this week's changes (automated tests + the fixes they

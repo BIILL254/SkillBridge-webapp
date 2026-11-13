@@ -2,7 +2,7 @@
 
 > **Course**: API Planning & Development — Week 2 Lab  
 > **Repository Root Deliverable**: `API_NEEDS.md`  
-> **App Name**: SkillBridge ([GitHub Repository](c:\Users\bill7\OneDrive%20-%20Strathmore%20University\Documents\SkillBridge-1))  
+> **App Name**: SkillBridge  
 > **Downstream Partner**: Farmers-AgroConnect ([GitHub Repository](https://github.com/Jmukami/farmers-agroconnect.git))  
 > **Upstream Partner**: Maji Website ([GitHub Repository](https://github.com/NgwonoJeremy/maji-website))  
 
@@ -11,8 +11,8 @@
 ## Executive Summary & Navigation
 
 This document serves as the master API Needs planning document for SkillBridge, covering both our **downstream consumer** (Farmers-AgroConnect) and our **upstream provider** (Maji Website). Detailed sub-documents are also maintained in the repository:
-- 📄 [Downstream API Needs Document (Farmers-AgroConnect)](file:///c:/Users/bill7/OneDrive%20-%20Strathmore%20University/Documents/SkillBridge-1/API_NEEDS_DOWNSTREAM.md)
-- 📄 [Upstream API Needs Document (Maji Website)](file:///c:/Users/bill7/OneDrive%20-%20Strathmore%20University/Documents/SkillBridge-1/API_NEEDS_UPSTREAM.md)
+- 📄 [Downstream API Needs Document (Farmers-AgroConnect)](API_NEEDS_DOWNSTREAM.md)
+- 📄 [Upstream API Needs Document (Maji Website)](API_NEEDS_UPSTREAM.md)
 
 ---
 

@@ -85,7 +85,7 @@ To fulfill Lab 10 Part D, the application is designed to survive upstream outage
      "error": "Maji Website service unavailable: ECONNREFUSED"
    }
    ```
-3. **UI Graceful Degradation:** The frontend component ([`src/components/LogisticsCard.jsx`](file:///c:/Users/bill7/Downloads/SkillBridge-webapp-updated/SkillBridge-webapp-main/src/components/LogisticsCard.jsx)) handles failures cleanly:
+3. **UI Graceful Degradation:** The frontend component ([`src/components/LogisticsCard.jsx`](../components/LogisticsCard.jsx)) handles failures cleanly:
    - Does **not** crash or trigger an unhandled React error boundary.
    - Does **not** show a blank screen.
    - Renders an informative amber alert: *"⚠️ Maji Website Service Unavailable: Physical study sessions will default to campus meeting points until partner connection recovers."*
