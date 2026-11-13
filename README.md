@@ -36,7 +36,7 @@ cp .env.example .env
 Copy-Item .env.example .env
 ```
 
-_(The pre-configured `.env.example` comes with working development keys out-of-the-box — no edits needed for local testing!)_
+_(`.env.example` holds throwaway local development keys, so no edits are needed to run locally: `web-local-dev-key-12345` for the web app, `dev-team-key` for testing and `dev-agroconnect-key` for the partner. **Never use these on a public deployment** — generate real keys and set them in the host's environment.)_
 
 ### 3. Launch the Application
 
@@ -178,7 +178,7 @@ The unversioned `/api/experts` and `/experts` still answer as v1 (with the same 
 
 ##  Running Automated Tests
 
-SkillBridge includes **432 automated tests** across **15 test suites** verifying routes, database operations, security policies, rate limiting, and resilience fallbacks:
+SkillBridge includes **509 automated tests** across **23 test suites** verifying routes, database operations, security policies, rate limiting, and resilience fallbacks:
 
 ```bash
 npm test
@@ -187,8 +187,8 @@ npm test
 Expected output:
 
 ```text
-Test Suites: 15 passed, 15 total
-Tests:       432 passed, 432 total
+Test Suites: 23 passed, 23 total
+Tests:       509 passed, 509 total
 Snapshots:   0 total
 Status:      All tests passing (100%)
 ```
