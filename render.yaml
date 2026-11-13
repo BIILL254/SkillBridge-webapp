@@ -31,6 +31,10 @@ services:
       # Render sits behind one proxy; this lets the rate limiter see real visitor addresses.
       - key: TRUST_PROXY
         value: "1"
+      # v1 of the experts API answers 410 Gone from its Sunset date (20 Nov 2026).
+      # Remove this line, or set V1_SUNSET_DATE later, if a partner needs longer.
+      - key: V1_ENFORCE_SUNSET
+        value: "true"
       # The frontend's address, e.g. https://skillbridge-web.onrender.com
       # (no trailing slash). Lets only your site call the API from a browser.
       - key: ALLOWED_ORIGIN

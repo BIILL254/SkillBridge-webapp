@@ -36,7 +36,7 @@ I also took on documentation and deployment-related work beyond my initial API L
 
 During the later part of the project, my contribution was mainly drafting lab work. Bill reviewed my drafts first, after which Bill, Stephanie and Vincent edited them or used them as submitted. I acknowledge that I let my teammates take the forefront during this period, and my drafts could sometimes have been more complete or submitted earlier. My Git history also shows a gap between 23 September and 15 October; the CAT pause explains part, but not all, of that period.
 
-I would rate my contribution **8/10** because I made substantial technical contributions across the project, particularly in backend development, security and Maji integration, while recognising areas where my consistency and involvement could have been better.
+I would rate my contribution **9/10** because I made substantial technical contributions across the project, particularly in backend development, security and Maji integration, while recognising areas where my consistency and involvement could have been better.
 
 ---
 
@@ -66,3 +66,9 @@ My commits appear under the author names Rick (two email addresses) and muthokar
 | `fee6531` | 29 Oct | Initial blind test and integration with maji-website |
 | `c975ce1` | 1 Nov | Timeout implementation, retry logic, graceful fallback and write-up |
 | `a89c812` | 2 Nov | Improvement on Maji API integration |
+
+---
+
+
+Kyalo Rick Muthoka-193988,
+ICS 2C, IAP retrospective

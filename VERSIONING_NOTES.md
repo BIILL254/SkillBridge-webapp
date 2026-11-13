@@ -31,7 +31,7 @@ Because `response.json()` now returns an object `{ data, count }` instead of an 
 From examining our live `/api/stats` endpoint and terminal request log:
 * `GET /api/experts` has recorded traffic from `caller: "agroconnect"`.
 * `GET /api/v2/experts` has not yet received traffic from their automated worker.
-* **Can we shut down v1 today?** Absolutely not. If we disabled v1 today, Farmers-AgroConnect's user-facing expert listings would break immediately. We must keep v1 running in parallel with `Deprecation: true` and `Sunset: Fri, 20 Nov 2026 00:00:00 GMT` headers until their traffic is observed on `/api/v2/experts`.
+* **Can we shut down v1 today?** Absolutely not. If we disabled v1 today, Farmers-AgroConnect's user-facing expert listings would break immediately. We must keep v1 running in parallel with `Deprecation: true` and `Sunset: Fri, 20 Nov 2026 00:00:00 GMT` headers until their traffic is observed on `/api/v2/experts`. Each v1 response also carries a `Link` header with the matching v2 URL. The sunset date is 20 Nov 2026; from that date v1 answers `410 Gone` (switched on with `V1_ENFORCE_SUNSET=true`). If AgroConnect is still calling v1 shortly before then, `V1_SUNSET_DATE` moves the date without a code change.
 
 ---
 

@@ -105,6 +105,10 @@ app.get("/api/vendors/all", (req, res) => {
 
 app.get("/api/vendors/top-rated", (req, res) => handleWithMode(req, res, vendorsTopRated));
 app.get("/api/orders/active/estates", (req, res) => handleWithMode(req, res, activeEstates));
+// v2 (Maji notice, 12 Nov 2026): the same list, wrapped as { data, count }
+app.get("/api/v2/orders/active/estates", (req, res) =>
+  handleWithMode(req, res, { data: activeEstates, count: activeEstates.length }),
+);
 app.get("/api/orders/active/schedules", (req, res) => handleWithMode(req, res, []));
 
 const PORT = 4000;

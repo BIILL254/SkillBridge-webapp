@@ -29,6 +29,7 @@ import adminRouter from "./routes/admin.routes.js";
 import { createRequireApiKey, createRateLimit } from "./middleware/apiKey.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { monitor, statsHandler } from "./middleware/monitoring.js";
+import { securityHeaders } from "./middleware/securityHeaders.js";
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.disable("x-powered-by");
 // registered FIRST, before CORS, the key check and the rate limiter, so
 // rejected requests (401, 429) and browser preflights are recorded too.
 app.use(monitor);
+
+// Week 14: standard security headers on every response (see the file for the list).
+app.use(securityHeaders);
 
 // Behind a host's reverse proxy (Render), req.ip would be the proxy's address
 // unless Express is told to trust the forwarded one. Set TRUST_PROXY=1 there.
@@ -116,9 +120,11 @@ app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
 
 // Week 13: Deprecation middleware for v1 endpoints
+// The sunset date can be moved with V1_SUNSET_DATE (no code change) if a partner needs longer.
+// The successor follows the request: /api/v1/experts/13 -> /api/v2/experts/13.
 const v1Deprecated = deprecated({
-  sunset: "2026-11-20",
-  successor: "/api/v2/experts",
+  sunset: process.env.V1_SUNSET_DATE || "2026-11-20",
+  successor: (req) => `/api/v2/experts${req.path === "/" ? "" : req.path}`,
 });
 
 // Downstream — served TO Farmers-AgroConnect
@@ -141,8 +147,9 @@ app.use("/experts", v1Deprecated, expertsRouter);
 app.use("/skills", skillsRouter);
 app.use("/requests", requestsRouter);
 
-// catch-all for unmatched API routes
-app.use("/api", (req, res) => {
+// catch-all for unmatched routes (Week 14: any path, not only /api, so a typo
+// like /expert gets the same JSON error and never Express's default HTML page)
+app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 

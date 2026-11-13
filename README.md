@@ -6,13 +6,13 @@ Within our three-team university API ring:
 
 - **Upstream:** Consumes water station logistics and vendor ratings from **Maji Website (Team 4)**.
 - **Our Core:** Provides expert discovery, consultation scheduling, and a skill marketplace.
-- **Downstream:** Provides verified expert discovery and agricultural consultation booking to **Farmers-AgroConnect (Team 11)**.
+- **Downstream:** Provides verified expert discovery and agricultural consultation booking to **Farmers-AgroConnect (Team 6)**.
 
 Built with **React 18**, **Express 4**, and **SQLite (`better-sqlite3`)**.
 
 ---
 
-## ⚡ Quickstart — Run the Web App in 3 Steps
+##  Quickstart — Run the Web App in 3 Steps
 
 Follow these simple steps from a fresh clone to get both the frontend and backend running:
 
@@ -59,7 +59,7 @@ npm run dev
 
 ---
 
-## 👤 Demo Accounts & Login Credentials
+##  Demo Accounts & Login Credentials
 
 The local SQLite database seeds 14 verified experts, categorized skills, and default accounts automatically on first start. All demo accounts use the default password `1234`:
 
@@ -72,7 +72,7 @@ The local SQLite database seeds 14 verified experts, categorized skills, and def
 
 ---
 
-## 🧭 How to Use the Web Application (New User Walkthrough)
+##  How to Use the Web Application (New User Walkthrough)
 
 Once the app is running at **[http://localhost:5173](http://localhost:5173)**:
 
@@ -114,7 +114,7 @@ Once the app is running at **[http://localhost:5173](http://localhost:5173)**:
 
 ---
 
-## 🔌 API Quickstart (For Developers & Partners)
+##  API Quickstart (For Developers & Partners)
 
 Every API request requires an API key in the `X-API-Key` header.
 
@@ -124,10 +124,10 @@ In your terminal, run:
 
 ```bash
 # Windows PowerShell: use curl.exe instead of curl
-curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/experts
+curl.exe -H "X-API-Key: web-local-dev-key-12345" http://localhost:3001/api/v2/experts
 ```
 
-Returns a `200 OK` JSON array of all 14 verified experts.
+Returns `200 OK` with `{ "data": [ ... ], "count": N }`: all verified experts (see [API Versions](#api-versions) below for v1).
 
 ### 2. Missing Key Enforcement (`401 Unauthorized`)
 
@@ -151,7 +151,24 @@ Response:
 
 ---
 
-## 📖 API Documentation & Contract
+## API Versions
+
+| Version | Status | Expert list | Location field |
+|---------|--------|-------------|----------------|
+| **v2** | Current: use this | `/api/v2/experts` returns `{ "data": [...], "count": N }` | `location` |
+| **v1** | Deprecated, sunset **20 Nov 2026** | `/api/v1/experts` returns a bare array | `estate` |
+
+The unversioned `/api/experts` and `/experts` still answer as v1 (with the same deprecation headers).
+
+- **What did not change:** IDs, names, ratings, coordinates, bio, skills, your `X-API-Key`, and the filters (`?location=` and `?estate=` both work on v2).
+- **How to tell you are on v1:** every v1 response carries `Deprecation: true`, `Sunset: <date>` and `Link: <the v2 URL for that same path>; rel="successor-version"`. v2 responses carry none of them.
+- **Sunset behaviour:** until the team switches it on, v1 keeps answering after the date. With `V1_ENFORCE_SUNSET=true` it answers `410 Gone` and names its successor. Move the date without a code change with `V1_SUNSET_DATE`.
+- **Upstream (Maji):** `PARTNER_VERSION=v1|v2` in `.env` chooses which Maji vendor API we call.
+- **Details:** [`DEPRECATION_NOTICE.md`](DEPRECATION_NOTICE.md) (what we told Team 6) and [`VERSIONING_NOTES.md`](VERSIONING_NOTES.md).
+
+---
+
+##  API Documentation & Contract
 
 - **OpenAPI 3.0 Contract:** Located at [`openapi.yaml`](openapi.yaml) in the root directory.
 - **Interactive Swagger UI:** Open [http://localhost:3001/swagger](http://localhost:3001/swagger) to test endpoints in your browser.
@@ -159,7 +176,7 @@ Response:
 
 ---
 
-## 🧪 Running Automated Tests
+##  Running Automated Tests
 
 SkillBridge includes **432 automated tests** across **15 test suites** verifying routes, database operations, security policies, rate limiting, and resilience fallbacks:
 
@@ -178,7 +195,7 @@ Status:      All tests passing (100%)
 
 ---
 
-## 🔄 Resetting the Database
+##  Resetting the Database
 
 If you wish to reset the local SQLite database to a pristine seeded state at any time:
 
@@ -190,7 +207,7 @@ This safely drops and recreates `skillbridge.db` with fresh demo students, mento
 
 ---
 
-## 🛠️ Tech Stack & Key Files
+##  Tech Stack & Key Files
 
 | Layer           | Technology                                     | Purpose                                                         |
 | :-------------- | :--------------------------------------------- | :-------------------------------------------------------------- |
@@ -203,6 +220,6 @@ This safely drops and recreates `skillbridge.db` with fresh demo students, mento
 
 ---
 
-## 📄 License
+##  License
 
-Developed for educational purposes as part of the Advanced Networking / Internet Application Programming course.
+Developed for educational purposes as part of the  Internet Application Programming course.

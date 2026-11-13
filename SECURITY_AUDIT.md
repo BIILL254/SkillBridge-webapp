@@ -10,8 +10,8 @@ Each consumer has its own key, so one can be revoked without breaking the others
 
 | Consumer | Key name | Where the key lives | Key sent privately? |
 | :--- | :--- | :--- | :--- |
-| Farmers-AgroConnect (downstream ring partner) | `agroconnect` | `API_KEYS` environment variable | [ ] fill in when sent |
-| Our own team, for testing | `team` | `API_KEYS` environment variable | [ ] fill in when sent |
+| Farmers-AgroConnect (downstream ring partner) | `agroconnect` | `API_KEYS` environment variable | Yes: sent privately by WhatsApp (direct message), late October |
+| Our own team, for testing | `team` | `API_KEYS` environment variable | Yes: shared once in the team group chat |
 | Our own React web app | `skillbridge-web` | `WEB_API_KEY` (server) and `VITE_API_KEY` (frontend build) | not needed, it is deployed with the site |
 
 Maji Website is not a consumer: we call them, they do not call us.
