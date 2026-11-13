@@ -51,7 +51,7 @@ During live testing outside the app, we discovered that Maji Website's deployed 
 
 | Property | Contract Specification | Maji Deployed API | SkillBridge Adapter Handling |
 | :--- | :--- | :--- | :--- |
-| **Endpoint** | `GET /estates` | `GET /api/orders/active/estates` | `majiClient.js` queries `/api/orders/active/estates` with fallback to `/estates`. |
+| **Endpoint** | `GET /estates` | `GET /api/v2/orders/active/estates` | `majiClient.js` queries the v2 path and reads the estate list from `body.data`. |
 | **Response Item** | `{ id, name, deliveryStatus }` | `{ "estate": "Westlands" }` | `normalizeEstates()` maps `item.estate` &rarr; `item.name`, generates a stable ID, and sets `deliveryStatus: "active"`. |
 | **Auth** | Bearer Token planned | Public / No Auth | Supported optionally; does not fail when absent. |
 | **Stations** | `GET /vendors/stations` | `404 Not Found` | Handled gracefully: returns `{ source: "live", stations: [], notice: "..." }` without failing the request. |
@@ -97,10 +97,10 @@ To fulfill Lab 10 Part D, the application is designed to survive upstream outage
 ### 1. Test Partner Connectivity in Terminal (Outside the App)
 ```powershell
 # In PowerShell (use curl.exe to avoid Invoke-WebRequest alias bugs):
-curl.exe -i https://maji-api-onrender-com.onrender.com/api/orders/active/estates
+curl.exe -i https://maji-api-onrender-com.onrender.com/api/v2/orders/active/estates
 
 # Or using native PowerShell:
-Invoke-RestMethod https://maji-api-onrender-com.onrender.com/api/orders/active/estates
+Invoke-RestMethod https://maji-api-onrender-com.onrender.com/api/v2/orders/active/estates
 ```
 
 ### 2. Run the Automated Test Suite (Mock Mode Protected)

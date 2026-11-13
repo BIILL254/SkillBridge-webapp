@@ -35,7 +35,7 @@
 // UPDATE (28 Oct 2026) — Maji replaced the Week 4 contract above. Their
 // CURRENT contract (src/documentation/MAJI_OPENAPI_CURRENT.yaml, see
 // MAJI_CONTRACT_UPDATE.md) has no authentication and these read-only calls:
-//   GET /api/orders/active/estates       -> [{ estate }]
+//   GET /api/v2/orders/active/estates     -> { data: [{ estate }], count }
 //   GET /api/orders/active/schedules     -> [{ estate, deliveryTime }]
 //   GET /api/vendors/locations?estate=   -> [{ vendorId, businessName, estate }]
 //   GET /api/vendors/top-rated           -> [{ vendorId, businessName, estate, rating, ... }]
@@ -318,9 +318,9 @@ function normalizeEstates(rawList) {
   });
 }
 
-// GET estates from Maji Website
-// Accommodates both their deployed /api/orders/active/estates endpoint
-// and their Week 4 OpenAPI contract (/estates?deliveryStatus={active|inactive})
+// GET estates from Maji Website. Maji v2 wraps the list in { data, count }.
+// The old v1 endpoint stopped working on 13 November 2026, so do not fall
+// back to it or the obsolete Week 4 /estates contract.
 export async function getEstates(deliveryStatus) {
   const baseUrl = getBaseUrl();
   if (!baseUrl) {
@@ -332,20 +332,14 @@ export async function getEstates(deliveryStatus) {
   }
 
   return liveOrSaved(`estates:${deliveryStatus || ""}`, async () => {
-    let rawData;
-    try {
-      rawData = await callMaji("/api/orders/active/estates");
-    } catch (err) {
-      if (err.upstreamStatus === 404) {
-        rawData = await callMaji(
-          `/estates${deliveryStatus ? `?deliveryStatus=${encodeURIComponent(deliveryStatus)}` : ""}`,
-        );
-      } else {
-        throw err;
-      }
+    const raw = await callMaji("/api/v2/orders/active/estates");
+    if (!raw || !Array.isArray(raw.data)) {
+      throw Object.assign(
+        new Error("Maji Website returned an unexpected v2 estates response"),
+        { status: 502 },
+      );
     }
-
-    const normalized = normalizeEstates(rawData);
+    const normalized = normalizeEstates(raw.data);
     const filtered = deliveryStatus
       ? normalized.filter((e) => e.deliveryStatus === deliveryStatus)
       : normalized;

@@ -127,3 +127,9 @@ In Week 13, Maji Website sent a formal deprecation notice announcing the retirem
 - **Zero-Downtime Switch:** Changing `PARTNER_VERSION=v2` in `.env` immediately redirects client calls to the v2 endpoint, normalizes `{ data: [...], count }` into our standard internal model, and leaves all UI components untouched.
 - **Automated Validation:** Verified with `npm test` via `__tests__/partner.test.js`, ensuring both v1 and v2 responses parse to identical UI-ready structures.
 
+## 8. Active estates migration (12 November 2026)
+
+Maji sent a second notice on 12 November 2026: `GET /api/orders/active/estates` is deprecated and will stop working on 13 November. The replacement is `GET /api/v2/orders/active/estates`, which returns `{ "data": [{ "estate": "..." }], "count": N }`. SkillBridge now requests the v2 path and normalizes only `body.data`; malformed v2 responses become a 502 and the existing last-good-data fallback remains available. No v1 fallback is kept because the partner is retiring that route. The same `MAJI_API_KEY` header configuration, retry behavior, and unrelated schedules/vendor endpoints remain unchanged.
+
+**Live verification and partner notification:** not yet recorded. The partner notice asks us to verify the v2 request and tell the partner; do that after running the integration from a networked environment. Do not treat this note as proof of a live call.
+
